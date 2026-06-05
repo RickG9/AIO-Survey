@@ -499,6 +499,11 @@
       <!-- About You -->
       <p class="section-title">About You</p>
 
+      <div class="card" id="card-name">
+        <p class="card-label">Your name <span style="color:var(--text-light);font-size:0.82rem;font-weight:400;">(optional)</span></p>
+        <input class="select-input" type="text" name="respondent_name" id="respondent-name" placeholder="First name or nickname" autocomplete="given-name" maxlength="80">
+      </div>
+
       <div class="card" id="card-attraction" data-question="attraction">
         <p class="card-label">Which attraction are you currently visiting? <span class="required-star">*</span></p>
         <select class="select-input" name="attraction" id="attraction" required>
@@ -811,6 +816,7 @@
     }
 
     const payload = {
+      respondent_name: document.getElementById('respondent-name').value.trim(),
       attraction: attractionSelect.value,
       is_local: document.querySelector('input[name="local"]:checked').value
     };

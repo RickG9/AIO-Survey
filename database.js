@@ -12,6 +12,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS survey_responses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     submitted_at TEXT DEFAULT (datetime('now')),
+    respondent_name TEXT,
     attraction TEXT,
     is_local TEXT,
     q1 INTEGER,
@@ -45,5 +46,8 @@ db.exec(`
     notes TEXT
   );
 `);
+
+// Migration: add respondent_name to existing databases that were created before this column.
+try { db.exec(`ALTER TABLE survey_responses ADD COLUMN respondent_name TEXT`); } catch (_) {}
 
 module.exports = db;

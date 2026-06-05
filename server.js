@@ -88,6 +88,7 @@ function buildCsv(rows, columns) {
 
 app.post('/api/survey', (req, res) => {
   try {
+    const respondentName = typeof req.body.respondent_name === 'string' ? req.body.respondent_name.trim().slice(0, 80) : '';
     const attraction = typeof req.body.attraction === 'string' ? req.body.attraction.trim() : '';
     const isLocal = req.body.is_local;
 
@@ -106,13 +107,13 @@ app.post('/api/survey', (req, res) => {
 
     const stmt = db.prepare(`
       INSERT INTO survey_responses (
-        attraction, is_local, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12
+        respondent_name, attraction, is_local, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `);
 
-    const info = stmt.run(attraction, isLocal, ...answers);
+    const info = stmt.run(respondentName || null, attraction, isLocal, ...answers);
     return res.json({ success: true, id: info.lastInsertRowid });
   } catch (error) {
     return sendError(res, 500, 'Failed to save survey response.');
@@ -284,6 +285,7 @@ app.get('/api/admin/stats', (req, res) => {
     const byLocation = Array.from(locationMap.values())
       .map(entry => ({
         location: entry.location,
+        count: entry.count,
         total_score: entry.count ? entry.totalSum / entry.count : 0,
         lq: entry.count ? entry.lqSum / entry.count : 0,
         noise: entry.count ? entry.noiseSum / entry.count : 0,
@@ -317,12 +319,53 @@ app.get('/api/admin/stats', (req, res) => {
   }
 });
 
+app.delete('/api/admin/survey/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+    db.prepare('DELETE FROM survey_responses WHERE id = ?').run(id);
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to delete survey response.');
+  }
+});
+
+app.delete('/api/admin/eqa/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+    db.prepare('DELETE FROM eqa_assessments WHERE id = ?').run(id);
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to delete EQA assessment.');
+  }
+});
+
+app.delete('/api/admin/survey', (req, res) => {
+  try {
+    db.prepare('DELETE FROM survey_responses').run();
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to clear survey responses.');
+  }
+});
+
+app.delete('/api/admin/eqa', (req, res) => {
+  try {
+    db.prepare('DELETE FROM eqa_assessments').run();
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to clear EQA assessments.');
+  }
+});
+
 app.get('/api/export/survey.csv', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM survey_responses ORDER BY submitted_at DESC, id DESC').all();
     const csv = buildCsv(rows, [
       { key: 'id', header: 'id' },
       { key: 'submitted_at', header: 'submitted_at' },
+      { key: 'respondent_name', header: 'respondent_name' },
       { key: 'attraction', header: 'attraction' },
       { key: 'is_local', header: 'is_local' },
       { key: 'q1', header: 'q1' },

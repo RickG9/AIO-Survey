@@ -348,6 +348,34 @@
 
     .export-btn:hover { background: var(--green-pale); }
 
+    .delete-btn {
+      border: none;
+      background: transparent;
+      color: var(--terra);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      line-height: 1;
+      opacity: 0.55;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .delete-btn:hover { opacity: 1; background: #fdd8d0; }
+
+    .danger-btn {
+      border: 1px solid var(--terra);
+      color: var(--terra);
+      background: transparent;
+      border-radius: 100px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s ease;
+    }
+    .danger-btn:hover { background: #fdd8d0; }
+
     .error-banner {
       display: none;
       margin-top: 1rem;
@@ -459,15 +487,26 @@
           <h4>Local vs Visitor Split</h4>
           <div class="chart-wrap"><canvas id="chart-locals"></canvas></div>
         </div>
+        <div class="card chart-card">
+          <h4>Responses per Attraction</h4>
+          <div class="chart-wrap"><canvas id="chart-attraction-count"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <h4>Response Distribution by Question</h4>
+          <div class="chart-wrap"><canvas id="chart-score-dist"></canvas></div>
+        </div>
       </div>
 
       <div class="table-card card">
         <div class="table-header">
           <h4>Raw Survey Responses</h4>
-          <div class="pagination">
-            <button class="page-btn" id="survey-prev">Prev</button>
-            <span id="survey-page">Page 1</span>
-            <button class="page-btn" id="survey-next">Next</button>
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <button class="danger-btn" onclick="clearAll('survey')">Reset All</button>
+            <div class="pagination">
+              <button class="page-btn" id="survey-prev">Prev</button>
+              <span id="survey-page">Page 1</span>
+              <button class="page-btn" id="survey-next">Next</button>
+            </div>
           </div>
         </div>
         <div class="table-wrap">
@@ -475,6 +514,7 @@
             <thead>
               <tr>
                 <th>Date</th>
+                <th>Name</th>
                 <th>Attraction</th>
                 <th>Local?</th>
                 <th>Q1</th>
@@ -489,8 +529,9 @@
                 <th>Q10</th>
                 <th>Q11</th>
                 <th>Q12</th>
-                <th>Env Score</th>
-                <th>Social Score</th>
+                <th>Env</th>
+                <th>Social</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="survey-table"></tbody>
@@ -538,11 +579,16 @@
           <h4>EQA Score Interpretation</h4>
           <div class="interpretation" id="eqa-interpretation"></div>
         </div>
+        <div class="card chart-card">
+          <h4>Assessment Count per Location</h4>
+          <div class="chart-wrap"><canvas id="chart-eqa-count"></canvas></div>
+        </div>
       </div>
 
       <div class="table-card card">
         <div class="table-header">
           <h4>All EQA Assessments</h4>
+          <button class="danger-btn" onclick="clearAll('eqa')">Reset All</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -560,6 +606,7 @@
                 <th>Derelict</th>
                 <th>Total</th>
                 <th>Notes</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="eqa-table"></tbody>
@@ -860,7 +907,7 @@
     function renderSurveyTable(rows) {
       const tbody = document.getElementById('survey-table');
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="17">No survey responses yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19">No survey responses yet.</td></tr>';
         return;
       }
 
@@ -877,6 +924,7 @@
         return `
           <tr>
             <td>${date}</td>
+            <td>${row.respondent_name || ''}</td>
             <td>${row.attraction || ''}</td>
             <td>${row.is_local || ''}</td>
             <td>${row.q1 || ''}</td>
@@ -893,6 +941,7 @@
             <td>${row.q12 || ''}</td>
             <td>${envScore.toFixed(1)}</td>
             <td>${socialScore.toFixed(1)}</td>
+            <td><button class="delete-btn" onclick="deleteRow('survey',${row.id})" title="Delete this response">×</button></td>
           </tr>
         `;
       }).join('');
@@ -985,12 +1034,98 @@
       const support = avgScore <= 30 ? 'supports' : 'does not support';
       const interpretation = `Based on EQA data, the average environmental quality score across assessed locations is ${avgScore.toFixed(1)} / 60, indicating ${quality} environmental quality. This ${support} the hypothesis that tourism in Rotorua is environmentally sustainable.`;
       setText('eqa-interpretation', interpretation);
+
+      buildChart('chart-eqa-count', 'bar', {
+        labels: locationLabels,
+        datasets: [{
+          label: 'Assessments',
+          data: locations.map(row => row.count || 0),
+          backgroundColor: '#2e6620',
+          borderRadius: 6
+        }]
+      }, {
+        scales: { y: { min: 0, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      });
+    }
+
+    function renderSurveyExtraCharts(survey, surveyRows) {
+      const attractionData = survey.by_attraction || [];
+      buildChart('chart-attraction-count', 'bar', {
+        labels: attractionData.map(r => r.attraction),
+        datasets: [{
+          label: 'Responses',
+          data: attractionData.map(r => r.count),
+          backgroundColor: '#2e6620',
+          borderRadius: 6
+        }]
+      }, {
+        indexAxis: 'y',
+        scales: { x: { min: 0, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      });
+
+      if (surveyRows.length > 0) {
+        const counts = Array.from({ length: 12 }, (_, q) => {
+          const key = `q${q + 1}`;
+          const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+          surveyRows.forEach(row => {
+            const v = Number(row[key]);
+            if (v >= 1 && v <= 5) dist[v]++;
+          });
+          return dist;
+        });
+
+        const ratingColors = ['#b84b20', '#d05820', '#c47c10', '#5a9c3e', '#2e6620'];
+        const ratingLabels = ['1 – Strongly Disagree', '2', '3 – Neutral', '4', '5 – Strongly Agree'];
+
+        buildChart('chart-score-dist', 'bar', {
+          labels: questionLabels,
+          datasets: [1, 2, 3, 4, 5].map((rating, i) => ({
+            label: ratingLabels[i],
+            data: counts.map(d => d[rating]),
+            backgroundColor: ratingColors[i]
+          }))
+        }, {
+          indexAxis: 'y',
+          scales: {
+            x: { stacked: true, ticks: { stepSize: 1 } },
+            y: { stacked: true }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } }
+          }
+        });
+      }
+    }
+
+    async function deleteRow(type, id) {
+      if (!confirm(`Delete this ${type === 'survey' ? 'survey response' : 'EQA assessment'}? This cannot be undone.`)) return;
+      try {
+        const r = await fetch(`/api/admin/${type}/${id}`, { method: 'DELETE' });
+        if (!r.ok) throw new Error();
+        await loadAllData();
+      } catch (_) {
+        alert('Failed to delete. Please try again.');
+      }
+    }
+
+    async function clearAll(type) {
+      const label = type === 'survey' ? 'ALL survey responses' : 'ALL EQA assessments';
+      if (!confirm(`This will permanently delete ${label}. Are you sure?`)) return;
+      try {
+        const r = await fetch(`/api/admin/${type}`, { method: 'DELETE' });
+        if (!r.ok) throw new Error();
+        await loadAllData();
+      } catch (_) {
+        alert('Failed to reset data. Please try again.');
+      }
     }
 
     function renderEqaTable(rows) {
       const tbody = document.getElementById('eqa-table');
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="12">No EQA assessments yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13">No EQA assessments yet.</td></tr>';
         return;
       }
 
@@ -1010,6 +1145,7 @@
             <td>${row.derelict ?? ''}</td>
             <td>${row.total_score ?? ''}</td>
             <td>${row.notes || ''}</td>
+            <td><button class="delete-btn" onclick="deleteRow('eqa',${row.id})" title="Delete this assessment">×</button></td>
           </tr>
         `;
       }).join('');
@@ -1047,6 +1183,7 @@
 
         renderSurveyStats(stats.survey);
         renderSurveyCharts(stats.survey);
+        renderSurveyExtraCharts(stats.survey, surveyRows);
         renderSurveyTable(surveyRows);
 
         renderEqaStats(stats.eqa);
