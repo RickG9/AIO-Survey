@@ -1,9 +1,46 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  console.error('ADMIN_PASSWORD environment variable is not set. Refusing to start so the admin dashboard is never exposed without a password.');
+  process.exit(1);
+}
+
+// Constant-time comparison to avoid leaking the password via timing.
+function safeEqual(a, b) {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function requireAuth(res) {
+  res.setHeader('WWW-Authenticate', 'Basic realm="AIO-Survey Admin", charset="UTF-8"');
+  return res.status(401).send('Authentication required.');
+}
+
+// Gate the admin dashboard, admin APIs and CSV exports behind a single password.
+// Runs before express.static so the static /admin page is protected too.
+const PROTECTED_PREFIXES = ['/admin', '/api/admin/', '/api/export/'];
+app.use((req, res, next) => {
+  const isProtected = PROTECTED_PREFIXES.some(prefix => req.path.startsWith(prefix));
+  if (!isProtected) return next();
+
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Basic ')) return requireAuth(res);
+
+  const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+  const password = decoded.slice(decoded.indexOf(':') + 1);
+  if (!safeEqual(password, ADMIN_PASSWORD)) return requireAuth(res);
+
+  return next();
+});
 
 const QUESTION_KEYS = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
 const ENV_KEYS = ['q1', 'q2', 'q3', 'q4', 'q6', 'q9'];

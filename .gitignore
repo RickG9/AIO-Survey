@@ -1,2 +1,8 @@
 node_modules/
 *.log
+
+# Local SQLite database (lives on the server's persistent disk, never in git)
+data/
+
+# Local environment / secrets
+.env

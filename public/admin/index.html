@@ -248,6 +248,15 @@
       color: #3d5c30;
     }
 
+    .chart-card .chart-wrap {
+      position: relative;
+      height: 260px;
+    }
+
+    .chart-card canvas {
+      display: block;
+    }
+
     .table-card {
       margin-top: 1.5rem;
       overflow: hidden;
@@ -427,19 +436,19 @@
       <div class="chart-grid">
         <div class="card chart-card">
           <h4>Average Score per Survey Question</h4>
-          <canvas id="chart-questions" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-questions"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>Sustainability Dimensions</h4>
-          <canvas id="chart-radar" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-radar"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>Scores by Attraction</h4>
-          <canvas id="chart-attraction" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-attraction"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>Local vs Visitor Split</h4>
-          <canvas id="chart-locals" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-locals"></canvas></div>
         </div>
       </div>
 
@@ -506,15 +515,15 @@
       <div class="chart-grid">
         <div class="card chart-card">
           <h4>Total EQA Score by Location</h4>
-          <canvas id="chart-eqa-total" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-eqa-total"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>Penalty Breakdown by Location</h4>
-          <canvas id="chart-eqa-stack" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-eqa-stack"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>Average Penalty per Feature (all locations)</h4>
-          <canvas id="chart-eqa-feature" height="260"></canvas>
+          <div class="chart-wrap"><canvas id="chart-eqa-feature"></canvas></div>
         </div>
         <div class="card chart-card">
           <h4>EQA Score Interpretation</h4>

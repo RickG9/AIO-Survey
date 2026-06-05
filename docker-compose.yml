@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Set ADMIN_PASSWORD in a .env file next to this compose file.
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - DATA_DIR=/app/data
+    volumes:
+      # Named volume keeps the SQLite database across rebuilds/redeploys.
+      - aio-data:/app/data
+
+volumes:
+  aio-data:
