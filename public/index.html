@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rotorua Sustainability Research — Sacred Heart College</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1a3d12;
+      --green-mid:   #2e6620;
+      --green-light: #5a9c3e;
+      --green-pale:  #d6edd0;
+      --cream:       #f8f3eb;
+      --cream-dark:  #ede5d6;
+      --terra:       #b84b20;
+      --text:        #1c2d16;
+      --text-mid:    #3d5c30;
+      --text-light:  #7a9a6a;
+      --white:       #ffffff;
+      --shadow:      0 2px 12px rgba(26,61,18,0.10);
+      --shadow-lg:   0 8px 32px rgba(26,61,18,0.16);
+      --radius:      16px;
+      --radius-sm:   10px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(160deg, var(--green) 0%, var(--green-mid) 70%, #3d7a28 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 2px,
+        transparent 2px,
+        transparent 20px
+      );
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 0.6rem;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+      max-width: 420px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    .wave {
+      display: block;
+      margin-top: -1px;
+      fill: var(--cream);
+    }
+
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      text-align: center;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      min-height: 170px;
+    }
+
+    .nav-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .nav-card h2 {
+      font-family: 'Lora', serif;
+      font-size: 1.3rem;
+      color: var(--green);
+    }
+
+    .nav-card span {
+      font-size: 0.88rem;
+      color: var(--text-mid);
+    }
+
+    .admin-link {
+      display: inline-block;
+      font-size: 0.85rem;
+      color: var(--green-mid);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    .admin-link:hover { border-color: var(--green-mid); }
+
+    .footer {
+      background: var(--green);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 1.25rem;
+      font-size: 0.78rem;
+    }
+
+    .footer strong { color: rgba(255,255,255,0.9); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-badge">Sacred Heart College · Auckland</div>
+    <h1>Rotorua Sustainability Research</h1>
+    <p>Rotorua Sustainability Research - Sacred Heart College Geography</p>
+  </header>
+  <svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
+  </svg>
+
+  <main class="content">
+    <div class="card-grid">
+      <a class="nav-card" href="/rotorua-survey.html">
+        <h2>Take the Survey</h2>
+        <span>Rotorua tourism sustainability questionnaire</span>
+      </a>
+      <a class="nav-card" href="/eqa-assessment.html">
+        <h2>EQA Assessment</h2>
+        <span>Environmental Quality Assessment field tool</span>
+      </a>
+    </div>
+    <a class="admin-link" href="/admin/">Research Dashboard (Staff Only)</a>
+  </main>
+
+  <footer class="footer">
+    <strong>Sacred Heart College Auckland</strong> · School Geography Research · Rotorua Sustainability Survey
+  </footer>
+</body>
+</html>

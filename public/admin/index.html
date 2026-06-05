@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research Dashboard — Rotorua Sustainability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1a3d12;
+      --green-mid:   #2e6620;
+      --green-light: #5a9c3e;
+      --green-pale:  #d6edd0;
+      --cream:       #f8f3eb;
+      --cream-dark:  #ede5d6;
+      --terra:       #b84b20;
+      --amber:       #c47c10;
+      --white:       #ffffff;
+      --shadow:      0 2px 12px rgba(26,61,18,0.10);
+      --shadow-lg:   0 8px 32px rgba(26,61,18,0.16);
+      --radius:      16px;
+      --radius-sm:   10px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: #1c2d16;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(160deg, var(--green) 0%, var(--green-mid) 70%, #3d7a28 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 2px,
+        transparent 2px,
+        transparent 20px
+      );
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1.5rem;
+      position: relative;
+      z-index: 1;
+      align-items: center;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.9rem;
+    }
+
+    .header h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 600;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+      max-width: 440px;
+    }
+
+    .refresh-btn {
+      background: rgba(255,255,255,0.12);
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px;
+      padding: 0.65rem 1.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    .wave {
+      display: block;
+      margin-top: -1px;
+      fill: var(--cream);
+    }
+
+    .tabs {
+      background: var(--cream);
+      padding: 0.9rem 1.5rem 0;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .tab-bar {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .tab-btn {
+      border: none;
+      background: var(--white);
+      padding: 0.6rem 1.4rem;
+      border-radius: 100px;
+      font-weight: 600;
+      color: #3d5c30;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--green-mid);
+      color: var(--white);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .section-title {
+      font-family: 'Lora', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 1.75rem 0 0.9rem;
+      padding-left: 0.75rem;
+      border-left: 3px solid var(--green-light);
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.1rem 1.2rem;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card h3 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7a9a6a;
+      margin-bottom: 0.45rem;
+    }
+
+    .stat-card .stat-value {
+      font-family: 'Lora', serif;
+      font-size: 1.8rem;
+      color: var(--green);
+    }
+
+    .stat-card .stat-sub {
+      font-size: 0.85rem;
+      color: #3d5c30;
+      margin-top: 0.35rem;
+    }
+
+    .banner-card {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .banner-title {
+      font-family: 'Lora', serif;
+      font-size: 1.1rem;
+      color: var(--green);
+    }
+
+    .badge-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 100px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge.supported { background: var(--green-pale); color: var(--green-mid); }
+    .badge.partial { background: #fdf0d0; color: var(--amber); }
+    .badge.not-supported { background: #fdd8d0; color: var(--terra); }
+
+    .badge-note {
+      font-size: 0.85rem;
+      color: #3d5c30;
+      margin-top: 0.4rem;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .chart-card h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.7rem;
+      color: #3d5c30;
+    }
+
+    .table-card {
+      margin-top: 1.5rem;
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      gap: 1rem;
+    }
+
+    .table-header h4 {
+      font-size: 0.95rem;
+      color: #3d5c30;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--cream-dark);
+      border-radius: var(--radius-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      min-width: 820px;
+    }
+
+    thead {
+      background: var(--cream-dark);
+      text-align: left;
+    }
+
+    th, td {
+      padding: 0.6rem 0.7rem;
+      border-bottom: 1px solid var(--cream-dark);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: #faf7f1; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: #3d5c30;
+    }
+
+    .page-btn {
+      border: 1px solid var(--cream-dark);
+      background: var(--white);
+      color: #3d5c30;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .export-card {
+      margin-top: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .export-btn {
+      border: 2px solid var(--green-mid);
+      color: var(--green-mid);
+      background: transparent;
+      border-radius: 100px;
+      padding: 0.7rem 1.4rem;
+      font-size: 0.86rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .export-btn:hover { background: var(--green-pale); }
+
+    .error-banner {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      background: #fdd8d0;
+      color: var(--terra);
+      font-weight: 600;
+    }
+
+    .error-banner.visible { display: block; }
+
+    .interpretation {
+      line-height: 1.6;
+      color: #3d5c30;
+    }
+
+    @media (max-width: 720px) {
+      .header-inner { align-items: flex-start; }
+      .tab-bar { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div>
+        <div class="header-badge">Sacred Heart College · Auckland</div>
+        <h1>Research Dashboard</h1>
+        <p>Tourism in Rotorua - Sustainability Analysis</p>
+      </div>
+      <button class="refresh-btn" id="refresh-btn">Refresh Data</button>
+    </div>
+  </header>
+  <svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
+  </svg>
+
+  <div class="tabs">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="survey">Survey Responses</button>
+      <button class="tab-btn" data-tab="eqa">EQA Assessments</button>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="error-banner" id="error-banner"></div>
+
+    <section id="tab-survey" class="tab-content active">
+      <div class="stat-grid">
+        <div class="card stat-card">
+          <h3>Total Responses</h3>
+          <div class="stat-value" id="survey-total">0</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Local Residents</h3>
+          <div class="stat-value" id="survey-locals">0</div>
+          <div class="stat-sub" id="survey-local-pct">0% of total</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Environmental Score</h3>
+          <div class="stat-value" id="survey-env">0.0 / 5</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Social Score</h3>
+          <div class="stat-value" id="survey-social">0.0 / 5</div>
+        </div>
+      </div>
+
+      <div class="section-title">Hypothesis Verdict</div>
+      <div class="card banner-card">
+        <div class="banner-title">Hypothesis: Tourism in Rotorua is (socially / environmentally) sustainable</div>
+        <div class="badge-row">
+          <div>
+            <div class="badge" id="env-badge">Environmental Sustainability: —</div>
+            <div class="badge-note" id="env-note"></div>
+          </div>
+          <div>
+            <div class="badge" id="social-badge">Social Sustainability: —</div>
+            <div class="badge-note" id="social-note"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Survey Insights</div>
+      <div class="chart-grid">
+        <div class="card chart-card">
+          <h4>Average Score per Survey Question</h4>
+          <canvas id="chart-questions" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>Sustainability Dimensions</h4>
+          <canvas id="chart-radar" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>Scores by Attraction</h4>
+          <canvas id="chart-attraction" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>Local vs Visitor Split</h4>
+          <canvas id="chart-locals" height="260"></canvas>
+        </div>
+      </div>
+
+      <div class="table-card card">
+        <div class="table-header">
+          <h4>Raw Survey Responses</h4>
+          <div class="pagination">
+            <button class="page-btn" id="survey-prev">Prev</button>
+            <span id="survey-page">Page 1</span>
+            <button class="page-btn" id="survey-next">Next</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Attraction</th>
+                <th>Local?</th>
+                <th>Q1</th>
+                <th>Q2</th>
+                <th>Q3</th>
+                <th>Q4</th>
+                <th>Q5</th>
+                <th>Q6</th>
+                <th>Q7</th>
+                <th>Q8</th>
+                <th>Q9</th>
+                <th>Q10</th>
+                <th>Q11</th>
+                <th>Q12</th>
+                <th>Env Score</th>
+                <th>Social Score</th>
+              </tr>
+            </thead>
+            <tbody id="survey-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="export-card">
+        <a class="export-btn" href="/api/export/survey.csv">⬇ Download Survey CSV</a>
+        <a class="export-btn" href="/api/export/eqa.csv">⬇ Download EQA CSV</a>
+      </div>
+    </section>
+
+    <section id="tab-eqa" class="tab-content">
+      <div class="stat-grid">
+        <div class="card stat-card">
+          <h3>Total Assessments</h3>
+          <div class="stat-value" id="eqa-total">0</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Average Total Score</h3>
+          <div class="stat-value" id="eqa-avg">0.0 / 60</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Worst Performing Feature</h3>
+          <div class="stat-value" id="eqa-worst">—</div>
+        </div>
+      </div>
+
+      <div class="section-title">EQA Insights</div>
+      <div class="chart-grid">
+        <div class="card chart-card">
+          <h4>Total EQA Score by Location</h4>
+          <canvas id="chart-eqa-total" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>Penalty Breakdown by Location</h4>
+          <canvas id="chart-eqa-stack" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>Average Penalty per Feature (all locations)</h4>
+          <canvas id="chart-eqa-feature" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <h4>EQA Score Interpretation</h4>
+          <div class="interpretation" id="eqa-interpretation"></div>
+        </div>
+      </div>
+
+      <div class="table-card card">
+        <div class="table-header">
+          <h4>All EQA Assessments</h4>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Assessor</th>
+                <th>LQ</th>
+                <th>Noise</th>
+                <th>Air</th>
+                <th>Litter</th>
+                <th>Vandalism</th>
+                <th>Transport</th>
+                <th>Derelict</th>
+                <th>Total</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="eqa-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="export-card">
+        <a class="export-btn" href="/api/export/survey.csv">⬇ Download Survey CSV</a>
+        <a class="export-btn" href="/api/export/eqa.csv">⬇ Download EQA CSV</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const state = {
+      stats: null,
+      surveyRows: [],
+      eqaRows: [],
+      surveyPage: 1,
+      rowsPerPage: 10,
+      charts: {}
+    };
+
+    const questionLabels = [
+      'Rubbish management',
+      'Recycling access',
+      'Natural environment',
+      'Impact guidance',
+      'Accessibility',
+      'Not overcrowded',
+      'Public transport',
+      'Pricing fairness',
+      'Protects nature',
+      'Cultural respect',
+      'Community benefit',
+      'Long-term viability'
+    ];
+
+    const envKeys = ['q1', 'q2', 'q3', 'q4', 'q6', 'q9'];
+    const socialKeys = ['q5', 'q7', 'q8', 'q10', 'q11', 'q12'];
+
+    const eqaFeatureLabels = {
+      lq: 'Landscape Quality',
+      noise: 'Noise',
+      air: 'Air Pollution',
+      litter: 'Litter',
+      vandalism: 'Vandalism',
+      transport: 'Transport Access',
+      derelict: 'Derelict Land'
+    };
+
+    const thresholdLinePlugin = {
+      id: 'thresholdLine',
+      afterDraw(chart) {
+        const options = chart.options.plugins && chart.options.plugins.thresholdLine;
+        if (!options) return;
+        const { ctx, chartArea, scales } = chart;
+        const axis = scales[options.axis || 'x'];
+        if (!axis) return;
+        const value = options.value;
+        const pixel = axis.getPixelForValue(value);
+        ctx.save();
+        ctx.strokeStyle = options.color || '#7a9a6a';
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (options.axis === 'y') {
+          ctx.moveTo(chartArea.left, pixel);
+          ctx.lineTo(chartArea.right, pixel);
+        } else {
+          ctx.moveTo(pixel, chartArea.top);
+          ctx.lineTo(pixel, chartArea.bottom);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = options.color || '#7a9a6a';
+        ctx.font = '12px DM Sans, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(options.label || '', pixel + 6, chartArea.top + 4);
+        ctx.restore();
+      }
+    };
+
+    Chart.register(thresholdLinePlugin);
+    Chart.defaults.font.family = 'DM Sans, sans-serif';
+    Chart.defaults.color = '#3d5c30';
+
+    const errorBanner = document.getElementById('error-banner');
+    const refreshBtn = document.getElementById('refresh-btn');
+
+    function showError(message) {
+      errorBanner.textContent = message;
+      errorBanner.classList.add('visible');
+    }
+
+    function clearError() {
+      errorBanner.textContent = '';
+      errorBanner.classList.remove('visible');
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    function average(values) {
+      if (!values.length) return 0;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function verdictFor(avg) {
+      if (avg >= 3.5) {
+        return { label: 'SUPPORTED', className: 'supported', note: 'Average score indicates strong agreement with sustainability.' };
+      }
+      if (avg >= 2.5) {
+        return { label: 'PARTIALLY SUPPORTED', className: 'partial', note: 'Responses are mixed, suggesting partial support for sustainability.' };
+      }
+      return { label: 'NOT SUPPORTED', className: 'not-supported', note: 'Average score indicates limited support for sustainability.' };
+    }
+
+    function renderSurveyStats(survey) {
+      setText('survey-total', survey.total_responses || 0);
+      setText('survey-locals', survey.locals_count || 0);
+
+      const total = survey.total_responses || 0;
+      const locals = survey.locals_count || 0;
+      const localPct = total ? ((locals / total) * 100).toFixed(1) : '0.0';
+      setText('survey-local-pct', `${localPct}% of total`);
+
+      setText('survey-env', `${(survey.avg_environmental || 0).toFixed(1)} / 5`);
+      setText('survey-social', `${(survey.avg_social || 0).toFixed(1)} / 5`);
+
+      const envVerdict = verdictFor(survey.avg_environmental || 0);
+      const socialVerdict = verdictFor(survey.avg_social || 0);
+
+      const envBadge = document.getElementById('env-badge');
+      envBadge.className = `badge ${envVerdict.className}`;
+      envBadge.textContent = `Environmental Sustainability: ${envVerdict.label}`;
+      setText('env-note', envVerdict.note);
+
+      const socialBadge = document.getElementById('social-badge');
+      socialBadge.className = `badge ${socialVerdict.className}`;
+      socialBadge.textContent = `Social Sustainability: ${socialVerdict.label}`;
+      setText('social-note', socialVerdict.note);
+    }
+
+    function renderSurveyCharts(survey) {
+      const avg = survey.avg_per_question || {};
+      const questionValues = [
+        avg.q1 || 0,
+        avg.q2 || 0,
+        avg.q3 || 0,
+        avg.q4 || 0,
+        avg.q5 || 0,
+        avg.q6 || 0,
+        avg.q7 || 0,
+        avg.q8 || 0,
+        avg.q9 || 0,
+        avg.q10 || 0,
+        avg.q11 || 0,
+        avg.q12 || 0
+      ];
+
+      const questionColors = [
+        '#2e6620',
+        '#2e6620',
+        '#2e6620',
+        '#2e6620',
+        '#b84b20',
+        '#2e6620',
+        '#b84b20',
+        '#b84b20',
+        '#2e6620',
+        '#b84b20',
+        '#b84b20',
+        '#b84b20'
+      ];
+
+      buildChart('chart-questions', 'bar', {
+        labels: questionLabels,
+        datasets: [{
+          label: 'Average score',
+          data: questionValues,
+          backgroundColor: questionColors,
+          borderRadius: 6
+        }]
+      }, {
+        indexAxis: 'y',
+        scales: {
+          x: {
+            min: 1,
+            max: 5,
+            ticks: { stepSize: 1 }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          thresholdLine: { axis: 'x', value: 3, label: 'Neutral' }
+        }
+      });
+
+      const radarLabels = [
+        'Waste Management',
+        'Natural Environment',
+        'Visitor Access',
+        'Cultural Respect',
+        'Community Benefit',
+        'Long-term Viability'
+      ];
+
+      const envRadar = [
+        average([avg.q1 || 0, avg.q2 || 0]),
+        average([avg.q3 || 0, avg.q9 || 0]),
+        average([avg.q4 || 0, avg.q6 || 0]),
+        avg.q10 || 0,
+        avg.q11 || 0,
+        avg.q12 || 0
+      ];
+
+      const socialRadar = [
+        average([avg.q1 || 0, avg.q2 || 0]),
+        average([avg.q3 || 0, avg.q9 || 0]),
+        average([avg.q5 || 0, avg.q7 || 0, avg.q8 || 0]),
+        avg.q10 || 0,
+        avg.q11 || 0,
+        avg.q12 || 0
+      ];
+
+      buildChart('chart-radar', 'radar', {
+        labels: radarLabels,
+        datasets: [
+          {
+            label: 'Environmental',
+            data: envRadar,
+            backgroundColor: 'rgba(46,102,32,0.2)',
+            borderColor: '#2e6620',
+            pointBackgroundColor: '#2e6620'
+          },
+          {
+            label: 'Social',
+            data: socialRadar,
+            backgroundColor: 'rgba(184,75,32,0.2)',
+            borderColor: '#b84b20',
+            pointBackgroundColor: '#b84b20'
+          }
+        ]
+      }, {
+        scales: {
+          r: { min: 1, max: 5, ticks: { stepSize: 1 } }
+        }
+      });
+
+      const attractionData = survey.by_attraction || [];
+      const attractionLabels = attractionData.map(row => row.attraction);
+      const envData = attractionData.map(row => row.avg_env || 0);
+      const socialData = attractionData.map(row => row.avg_social || 0);
+
+      buildChart('chart-attraction', 'bar', {
+        labels: attractionLabels,
+        datasets: [
+          {
+            label: 'Environmental Avg',
+            data: envData,
+            backgroundColor: '#2e6620'
+          },
+          {
+            label: 'Social Avg',
+            data: socialData,
+            backgroundColor: '#b84b20'
+          }
+        ]
+      }, {
+        scales: { y: { min: 0, max: 5, ticks: { stepSize: 1 } } }
+      });
+
+      buildChart('chart-locals', 'doughnut', {
+        labels: ['Locals', 'Visitors'],
+        datasets: [{
+          data: [survey.locals_count || 0, survey.visitors_count || 0],
+          backgroundColor: ['#2e6620', '#b84b20']
+        }]
+      }, {
+        plugins: { legend: { position: 'bottom' } }
+      });
+    }
+
+    function renderSurveyTable(rows) {
+      const tbody = document.getElementById('survey-table');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="17">No survey responses yet.</td></tr>';
+        return;
+      }
+
+      const totalPages = Math.ceil(rows.length / state.rowsPerPage) || 1;
+      state.surveyPage = Math.min(state.surveyPage, totalPages);
+
+      const start = (state.surveyPage - 1) * state.rowsPerPage;
+      const pageRows = rows.slice(start, start + state.rowsPerPage);
+
+      tbody.innerHTML = pageRows.map(row => {
+        const date = row.submitted_at ? row.submitted_at.split(' ')[0] : '';
+        const envScore = average(envKeys.map(key => Number(row[key]) || 0));
+        const socialScore = average(socialKeys.map(key => Number(row[key]) || 0));
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${row.attraction || ''}</td>
+            <td>${row.is_local || ''}</td>
+            <td>${row.q1 || ''}</td>
+            <td>${row.q2 || ''}</td>
+            <td>${row.q3 || ''}</td>
+            <td>${row.q4 || ''}</td>
+            <td>${row.q5 || ''}</td>
+            <td>${row.q6 || ''}</td>
+            <td>${row.q7 || ''}</td>
+            <td>${row.q8 || ''}</td>
+            <td>${row.q9 || ''}</td>
+            <td>${row.q10 || ''}</td>
+            <td>${row.q11 || ''}</td>
+            <td>${row.q12 || ''}</td>
+            <td>${envScore.toFixed(1)}</td>
+            <td>${socialScore.toFixed(1)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const prevBtn = document.getElementById('survey-prev');
+      const nextBtn = document.getElementById('survey-next');
+      prevBtn.disabled = state.surveyPage <= 1;
+      nextBtn.disabled = state.surveyPage >= totalPages;
+      setText('survey-page', `Page ${state.surveyPage} of ${totalPages}`);
+    }
+
+    function renderEqaStats(eqa) {
+      setText('eqa-total', eqa.total_assessments || 0);
+      setText('eqa-avg', `${(eqa.avg_total_score || 0).toFixed(1)} / 60`);
+
+      const avgPerFeature = eqa.avg_per_feature || {};
+      let worst = { key: null, value: -1 };
+      Object.keys(avgPerFeature).forEach(key => {
+        if (avgPerFeature[key] > worst.value) {
+          worst = { key, value: avgPerFeature[key] };
+        }
+      });
+      setText('eqa-worst', worst.key ? eqaFeatureLabels[worst.key] : '—');
+    }
+
+    function renderEqaCharts(eqa) {
+      const locations = eqa.by_location || [];
+      const locationLabels = locations.map(row => row.location);
+      const totalScores = locations.map(row => row.total_score || 0);
+
+      const scoreColors = totalScores.map(score => {
+        if (score <= 15) return '#5a9c3e';
+        if (score <= 30) return '#c47c10';
+        if (score <= 45) return '#d05820';
+        return '#b84b20';
+      });
+
+      buildChart('chart-eqa-total', 'bar', {
+        labels: locationLabels,
+        datasets: [{
+          label: 'Total Score',
+          data: totalScores,
+          backgroundColor: scoreColors,
+          borderRadius: 6
+        }]
+      }, {
+        indexAxis: 'y',
+        scales: { x: { min: 0, max: 60 } },
+        plugins: { thresholdLine: { axis: 'x', value: 30, label: 'Midpoint' }, legend: { display: false } }
+      });
+
+      const stackColors = ['#5a9c3e', '#78b35b', '#c47c10', '#d59a3a', '#d05820', '#c4471a', '#b84b20'];
+      const stackDatasets = Object.keys(eqaFeatureLabels).map((key, index) => ({
+        label: eqaFeatureLabels[key],
+        data: locations.map(row => row[key] || 0),
+        backgroundColor: stackColors[index]
+      }));
+
+      buildChart('chart-eqa-stack', 'bar', {
+        labels: locationLabels,
+        datasets: stackDatasets
+      }, {
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, min: 0, max: 60 }
+        }
+      });
+
+      const featureLabels = Object.keys(eqaFeatureLabels).map(key => eqaFeatureLabels[key]);
+      const featureValues = Object.keys(eqaFeatureLabels).map(key => (eqa.avg_per_feature || {})[key] || 0);
+
+      buildChart('chart-eqa-feature', 'bar', {
+        labels: featureLabels,
+        datasets: [{
+          label: 'Average penalty',
+          data: featureValues,
+          backgroundColor: '#2e6620'
+        }]
+      }, {
+        scales: { y: { min: 0, max: 10 } },
+        plugins: { legend: { display: false } }
+      });
+
+      const avgScore = eqa.avg_total_score || 0;
+      let quality = 'Good';
+      if (avgScore > 45) quality = 'Very Poor';
+      else if (avgScore > 30) quality = 'Poor';
+      else if (avgScore > 15) quality = 'Moderate';
+
+      const support = avgScore <= 30 ? 'supports' : 'does not support';
+      const interpretation = `Based on EQA data, the average environmental quality score across assessed locations is ${avgScore.toFixed(1)} / 60, indicating ${quality} environmental quality. This ${support} the hypothesis that tourism in Rotorua is environmentally sustainable.`;
+      setText('eqa-interpretation', interpretation);
+    }
+
+    function renderEqaTable(rows) {
+      const tbody = document.getElementById('eqa-table');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="12">No EQA assessments yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(row => {
+        const date = row.assess_date || (row.submitted_at ? row.submitted_at.split(' ')[0] : '');
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${row.location || ''}</td>
+            <td>${row.assessor || ''}</td>
+            <td>${row.lq ?? ''}</td>
+            <td>${row.noise ?? ''}</td>
+            <td>${row.air ?? ''}</td>
+            <td>${row.litter ?? ''}</td>
+            <td>${row.vandalism ?? ''}</td>
+            <td>${row.transport ?? ''}</td>
+            <td>${row.derelict ?? ''}</td>
+            <td>${row.total_score ?? ''}</td>
+            <td>${row.notes || ''}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function buildChart(canvasId, type, data, options) {
+      if (state.charts[canvasId]) {
+        state.charts[canvasId].destroy();
+      }
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      state.charts[canvasId] = new Chart(ctx, {
+        type,
+        data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          ...options
+        }
+      });
+    }
+
+    async function loadAllData() {
+      clearError();
+      refreshBtn.disabled = true;
+      try {
+        const [stats, surveyRows, eqaRows] = await Promise.all([
+          fetchJson('/api/admin/stats'),
+          fetchJson('/api/admin/survey'),
+          fetchJson('/api/admin/eqa')
+        ]);
+
+        state.stats = stats;
+        state.surveyRows = surveyRows;
+        state.eqaRows = eqaRows;
+
+        renderSurveyStats(stats.survey);
+        renderSurveyCharts(stats.survey);
+        renderSurveyTable(surveyRows);
+
+        renderEqaStats(stats.eqa);
+        renderEqaCharts(stats.eqa);
+        renderEqaTable(eqaRows);
+      } catch (error) {
+        showError('Unable to load dashboard data. Please try again.');
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    document.getElementById('survey-prev').addEventListener('click', () => {
+      if (state.surveyPage > 1) {
+        state.surveyPage -= 1;
+        renderSurveyTable(state.surveyRows);
+      }
+    });
+
+    document.getElementById('survey-next').addEventListener('click', () => {
+      const totalPages = Math.ceil(state.surveyRows.length / state.rowsPerPage) || 1;
+      if (state.surveyPage < totalPages) {
+        state.surveyPage += 1;
+        renderSurveyTable(state.surveyRows);
+      }
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    refreshBtn.addEventListener('click', loadAllData);
+    loadAllData();
+  </script>
+</body>
+</html>

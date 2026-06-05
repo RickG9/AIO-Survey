@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Rotorua Sustainability Survey — Sacred Heart College</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1a3d12;
+      --green-mid:   #2e6620;
+      --green-light: #5a9c3e;
+      --green-pale:  #d6edd0;
+      --cream:       #f8f3eb;
+      --cream-dark:  #ede5d6;
+      --terra:       #b84b20;
+      --terra-light: #e07050;
+      --text:        #1c2d16;
+      --text-mid:    #3d5c30;
+      --text-light:  #7a9a6a;
+      --white:       #ffffff;
+      --shadow:      0 2px 12px rgba(26,61,18,0.10);
+      --shadow-lg:   0 8px 32px rgba(26,61,18,0.16);
+      --radius:      16px;
+      --radius-sm:   10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .top-nav {
+      background: var(--green);
+      color: var(--white);
+      text-align: center;
+      padding: 0.45rem 1.25rem;
+      font-size: 0.82rem;
+    }
+
+    .top-nav a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 0.55rem;
+    }
+
+    .top-nav a:hover { text-decoration: underline; }
+
+    /* ─── HEADER ─────────────────────────────────────── */
+    .header {
+      background: linear-gradient(160deg, var(--green) 0%, var(--green-mid) 70%, #3d7a28 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 2px,
+        transparent 2px,
+        transparent 20px
+      );
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 0.6rem;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+      max-width: 380px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    /* ─── WAVE ────────────────────────────────────────── */
+    .wave {
+      display: block;
+      margin-top: -1px;
+      fill: var(--cream);
+    }
+
+    /* ─── PROGRESS ───────────────────────────────────── */
+    .progress-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--cream);
+      padding: 0.6rem 1.5rem;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      margin-bottom: 0.35rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--cream-dark);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green-light), var(--terra));
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ─── FORM ────────────────────────────────────────── */
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* ─── SECTION TITLE ───────────────────────────────── */
+    .section-title {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 2rem 0 0.8rem;
+      padding-left: 0.75rem;
+      border-left: 3px solid var(--green-light);
+    }
+
+    /* ─── CARD ────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .card:focus-within {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-1px);
+    }
+
+    .card.answered {
+      border-left: 3px solid var(--green-light);
+    }
+
+    .card-label {
+      font-size: 0.97rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 1.1rem;
+      line-height: 1.45;
+    }
+
+    .required-star {
+      color: var(--terra);
+      margin-left: 2px;
+    }
+
+    .select-input {
+      width: 100%;
+      border: 2px solid var(--cream-dark);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.85rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .select-input:focus {
+      border-color: var(--green-light);
+      background: var(--white);
+    }
+
+    /* ─── YES / NO ────────────────────────────────────── */
+    .yn-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .yn-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 2px solid var(--cream-dark);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      background: var(--cream);
+      transition: all 0.18s ease;
+    }
+
+    .yn-btn:hover {
+      border-color: var(--green-light);
+      background: var(--green-pale);
+      color: var(--green);
+    }
+
+    .yn-btn.selected {
+      border-color: var(--green-mid);
+      background: var(--green-pale);
+      color: var(--green);
+    }
+
+    .yn-btn input { display: none; }
+
+    /* ─── LIKERT SCALE ────────────────────────────────── */
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.55rem;
+    }
+
+    .scale-labels span {
+      font-size: 0.64rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      text-align: center;
+      flex: 1;
+    }
+
+    .scale-labels span:first-child { text-align: left; }
+    .scale-labels span:last-child  { text-align: right; }
+
+    .likert-group {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: space-between;
+    }
+
+    .likert-option {
+      flex: 1;
+      position: relative;
+    }
+
+    .likert-option input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .likert-option label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      cursor: pointer;
+    }
+
+    .likert-dot {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2.5px solid var(--cream-dark);
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s ease;
+      font-size: 1.1rem;
+    }
+
+    .likert-option:hover .likert-dot {
+      border-color: var(--green-light);
+      background: var(--green-pale);
+    }
+
+    .likert-option input:checked ~ label .likert-dot {
+      border-color: var(--green-mid);
+      background: var(--green-mid);
+      box-shadow: 0 0 0 3px var(--green-pale);
+    }
+
+    .likert-option input:checked ~ label .dot-inner {
+      background: var(--white);
+    }
+
+    .dot-inner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cream-dark);
+      transition: background 0.18s ease;
+    }
+
+    /* ─── SUBMIT ──────────────────────────────────────── */
+    .submit-area {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .unanswered-note {
+      font-size: 0.82rem;
+      color: var(--terra);
+      margin-bottom: 0.8rem;
+      min-height: 1.2em;
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, var(--green-mid), var(--green));
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      padding: 1rem 3rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(46,102,32,0.35);
+      transition: all 0.2s ease;
+      letter-spacing: 0.02em;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(46,102,32,0.4);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+
+    /* ─── THANK YOU SCREEN ────────────────────────────── */
+    .thankyou {
+      display: none;
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+
+    .thankyou.visible { display: block; animation: fadeUp 0.5s ease both; }
+
+    .ty-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--green-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      margin: 0 auto 1.5rem;
+    }
+
+    .thankyou h2 {
+      font-family: 'Lora', serif;
+      font-size: 1.8rem;
+      color: var(--green);
+      margin-bottom: 0.75rem;
+    }
+
+    .thankyou p {
+      color: var(--text-mid);
+      font-size: 0.97rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .restart-btn {
+      display: inline-block;
+      border: 2px solid var(--green-mid);
+      color: var(--green-mid);
+      border-radius: 100px;
+      padding: 0.7rem 2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s ease;
+    }
+
+    .restart-btn:hover {
+      background: var(--green-pale);
+    }
+
+    /* ─── VALIDATION ──────────────────────────────────── */
+    .card.error {
+      border-left: 3px solid var(--terra);
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-view { animation: fadeUp 0.4s ease both; }
+
+    /* ─── FOOTER ──────────────────────────────────────── */
+    .footer {
+      background: var(--green);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 1.25rem;
+      font-size: 0.78rem;
+    }
+
+    .footer strong { color: rgba(255,255,255,0.9); }
+
+    @media (max-width: 380px) {
+      .likert-dot { width: 36px; height: 36px; }
+      .card { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="/rotorua-survey.html">📋 Survey</a>
+  <span>|</span>
+  <a href="/eqa-assessment.html">📊 EQA Assessment</a>
+  <span>|</span>
+  <a href="/admin/">🔬 View Dashboard →</a>
+</nav>
+
+<!-- ─── HEADER ─────────────────────────────────────── -->
+<header class="header">
+  <div class="header-badge">Sacred Heart College · Auckland</div>
+  <h1>Rotorua Sustainability Survey</h1>
+  <p>School Geography Research — your thoughts on sustainable tourism in Rotorua</p>
+</header>
+<svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
+</svg>
+
+<!-- ─── PROGRESS ───────────────────────────────────── -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Your progress</span>
+    <span id="progress-text">0 of 14 answered</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</div>
+
+<!-- ─── FORM ─────────────────────────────────────────── -->
+<div id="form-view" class="form-view">
+  <div class="form-container">
+    <form id="survey-form" novalidate>
+
+      <!-- About You -->
+      <p class="section-title">About You</p>
+
+      <div class="card" id="card-attraction" data-question="attraction">
+        <p class="card-label">Which attraction are you currently visiting? <span class="required-star">*</span></p>
+        <select class="select-input" name="attraction" id="attraction" required>
+          <option value="" selected disabled>Select an attraction</option>
+          <option>Wai-O-Tapu Thermal Wonderland</option>
+          <option>Te Puia</option>
+          <option>Whakarewarewa Village</option>
+          <option>Polynesian Spa</option>
+          <option>Rotorua Museum / Te Whare Taonga</option>
+          <option>Skyline Rotorua</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="card" id="card-local" data-question="local">
+        <p class="card-label">I consider myself a local <span class="required-star">*</span></p>
+        <div class="yn-group">
+          <label class="yn-btn" id="yn-yes">
+            <input type="radio" name="local" value="yes" required>
+            ✅ Yes
+          </label>
+          <label class="yn-btn" id="yn-no">
+            <input type="radio" name="local" value="no">
+            🌏 No (visitor)
+          </label>
+        </div>
+      </div>
+
+      <!-- At the Attraction -->
+      <p class="section-title">At This Attraction</p>
+
+      <!-- Likert question template -->
+      <!-- 1 -->
+      <div class="card" id="card-q1" data-question="q1">
+        <p class="card-label">This attraction manages rubbish effectively <span class="required-star">*</span></p>
+        <div class="scale-labels">
+          <span>Strongly<br>Agree</span>
+          <span></span>
+          <span>Neutral</span>
+          <span></span>
+          <span>Strongly<br>Disagree</span>
+        </div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q1" value="5" id="q1-5"><label for="q1-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="4" id="q1-4"><label for="q1-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="3" id="q1-3"><label for="q1-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="2" id="q1-2"><label for="q1-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="1" id="q1-1"><label for="q1-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="card" id="card-q2" data-question="q2">
+        <p class="card-label">Recycling facilities are easy to access at this attraction <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q2" value="5" id="q2-5"><label for="q2-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="4" id="q2-4"><label for="q2-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="3" id="q2-3"><label for="q2-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="2" id="q2-2"><label for="q2-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="1" id="q2-1"><label for="q2-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="card" id="card-q3" data-question="q3">
+        <p class="card-label">The natural environment at this attraction is well looked after <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q3" value="5" id="q3-5"><label for="q3-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="4" id="q3-4"><label for="q3-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="3" id="q3-3"><label for="q3-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="2" id="q3-2"><label for="q3-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="1" id="q3-1"><label for="q3-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="card" id="card-q4" data-question="q4">
+        <p class="card-label">This attraction gives visitors clear information on how to reduce their environmental impact <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q4" value="5" id="q4-5"><label for="q4-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="4" id="q4-4"><label for="q4-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="3" id="q4-3"><label for="q4-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="2" id="q4-2"><label for="q4-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="1" id="q4-1"><label for="q4-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="card" id="card-q5" data-question="q5">
+        <p class="card-label">The attraction is accessible for a wide range of visitors, including families, elderly people and people with disabilities <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q5" value="5" id="q5-5"><label for="q5-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="4" id="q5-4"><label for="q5-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="3" id="q5-3"><label for="q5-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="2" id="q5-2"><label for="q5-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="1" id="q5-1"><label for="q5-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="card" id="card-q6" data-question="q6">
+        <p class="card-label">The attraction is not overcrowded <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q6" value="5" id="q6-5"><label for="q6-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="4" id="q6-4"><label for="q6-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="3" id="q6-3"><label for="q6-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="2" id="q6-2"><label for="q6-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="1" id="q6-1"><label for="q6-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <div class="card" id="card-q7" data-question="q7">
+        <p class="card-label">Public transport is easily accessible to get to and from this attraction <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q7" value="5" id="q7-5"><label for="q7-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="4" id="q7-4"><label for="q7-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="3" id="q7-3"><label for="q7-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="2" id="q7-2"><label for="q7-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="1" id="q7-1"><label for="q7-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 8 -->
+      <div class="card" id="card-q8" data-question="q8">
+        <p class="card-label">The pricing for this attraction is reasonable <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q8" value="5" id="q8-5"><label for="q8-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="4" id="q8-4"><label for="q8-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="3" id="q8-3"><label for="q8-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="2" id="q8-2"><label for="q8-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="1" id="q8-1"><label for="q8-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- Rotorua broadly -->
+      <p class="section-title">Rotorua Tourism — Broader Views</p>
+
+      <!-- 9 -->
+      <div class="card" id="card-q9" data-question="q9">
+        <p class="card-label">From what you have seen, tourism in Rotorua protects the natural environment <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q9" value="5" id="q9-5"><label for="q9-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="4" id="q9-4"><label for="q9-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="3" id="q9-3"><label for="q9-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="2" id="q9-2"><label for="q9-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="1" id="q9-1"><label for="q9-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="card" id="card-q10" data-question="q10">
+        <p class="card-label">Rotorua tourism represents Māori culture in a respectful way <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q10" value="5" id="q10-5"><label for="q10-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="4" id="q10-4"><label for="q10-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="3" id="q10-3"><label for="q10-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="2" id="q10-2"><label for="q10-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="1" id="q10-1"><label for="q10-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 11 -->
+      <div class="card" id="card-q11" data-question="q11">
+        <p class="card-label">Tourism in Rotorua benefits the local community <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q11" value="5" id="q11-5"><label for="q11-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="4" id="q11-4"><label for="q11-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="3" id="q11-3"><label for="q11-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="2" id="q11-2"><label for="q11-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="1" id="q11-1"><label for="q11-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 12 -->
+      <div class="card" id="card-q12" data-question="q12">
+        <p class="card-label">Rotorua is managing tourism in a way that can continue in the long run <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q12" value="5" id="q12-5"><label for="q12-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="4" id="q12-4"><label for="q12-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="3" id="q12-3"><label for="q12-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="2" id="q12-2"><label for="q12-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="1" id="q12-1"><label for="q12-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-area">
+        <p class="unanswered-note" id="unanswered-note"></p>
+        <button type="submit" class="submit-btn">Submit Survey →</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ─── THANK YOU ───────────────────────────────────── -->
+<div id="thankyou-screen" class="thankyou form-container">
+  <div class="ty-icon">🌿</div>
+  <h2>Tēnā koe!</h2>
+  <p>Thank you for sharing your thoughts on sustainability in Rotorua. Your response has been recorded and will help Sacred Heart College's geography research.</p>
+  <button class="restart-btn" onclick="restartForm()">Submit another response</button>
+</div>
+
+<footer class="footer">
+  <strong>Sacred Heart College Auckland</strong> · School Geography Research · Rotorua Sustainability Survey
+</footer>
+
+<script>
+  const TOTAL = 14;
+
+  // ── Progress tracking ──────────────────────────────
+  function updateProgress() {
+    let answered = 0;
+
+    const attractionSelect = document.getElementById('attraction');
+    if (attractionSelect && attractionSelect.value) answered++;
+
+    // Check local (yes/no)
+    if (document.querySelector('input[name="local"]:checked')) answered++;
+
+    // Check likert questions
+    for (let i = 1; i <= 12; i++) {
+      if (document.querySelector(`input[name="q${i}"]:checked`)) answered++;
+    }
+
+    document.getElementById('progress-fill').style.width = `${(answered / TOTAL) * 100}%`;
+    document.getElementById('progress-text').textContent = `${answered} of ${TOTAL} answered`;
+  }
+
+  // ── Attraction select state ────────────────────────
+  const attractionSelect = document.getElementById('attraction');
+  attractionSelect.addEventListener('change', () => {
+    const card = document.getElementById('card-attraction');
+    card.classList.add('answered');
+    card.classList.remove('error');
+    updateProgress();
+  });
+
+  // ── Yes/No visual toggle ───────────────────────────
+  document.querySelectorAll('.yn-btn input').forEach(input => {
+    input.addEventListener('change', () => {
+      document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+      input.closest('.yn-btn').classList.add('selected');
+      document.getElementById('card-local').classList.add('answered');
+      document.getElementById('card-local').classList.remove('error');
+      updateProgress();
+    });
+  });
+
+  // ── Likert answered state ──────────────────────────
+  document.querySelectorAll('.likert-option input').forEach(input => {
+    input.addEventListener('change', () => {
+      const card = input.closest('.card');
+      card.classList.add('answered');
+      card.classList.remove('error');
+      updateProgress();
+    });
+  });
+
+  // ── Form submission ────────────────────────────────
+  document.getElementById('survey-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    let allValid = true;
+    let firstError = null;
+
+    const note = document.getElementById('unanswered-note');
+    note.textContent = '';
+
+    // Validate attraction
+    const attractionCard = document.getElementById('card-attraction');
+    if (!attractionSelect.value) {
+      attractionCard.classList.add('error');
+      if (!firstError) firstError = attractionCard;
+      allValid = false;
+    }
+
+    // Validate local
+    const localCard = document.getElementById('card-local');
+    if (!document.querySelector('input[name="local"]:checked')) {
+      localCard.classList.add('error');
+      if (!firstError) firstError = localCard;
+      allValid = false;
+    }
+
+    // Validate likerts
+    for (let i = 1; i <= 12; i++) {
+      const card = document.getElementById(`card-q${i}`);
+      if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+        card.classList.add('error');
+        if (!firstError) firstError = card;
+        allValid = false;
+      }
+    }
+
+    if (!allValid) {
+      note.textContent = '⚠️ Please answer all questions before submitting.';
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const payload = {
+      attraction: attractionSelect.value,
+      is_local: document.querySelector('input[name="local"]:checked').value
+    };
+
+    for (let i = 1; i <= 12; i++) {
+      payload[`q${i}`] = parseInt(document.querySelector(`input[name="q${i}"]:checked`).value, 10);
+    }
+
+    const submitBtn = document.querySelector('.submit-btn');
+    submitBtn.disabled = true;
+    note.textContent = 'Submitting...';
+
+    try {
+      const response = await fetch('/api/survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Unable to submit survey.');
+      }
+
+      document.getElementById('form-view').style.display = 'none';
+      const ty = document.getElementById('thankyou-screen');
+      ty.classList.add('visible');
+      ty.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+      note.textContent = `⚠️ ${error.message}`;
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ── Restart ────────────────────────────────────────
+  function restartForm() {
+    document.getElementById('survey-form').reset();
+    document.querySelectorAll('.card').forEach(c => {
+      c.classList.remove('answered', 'error');
+    });
+    document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('unanswered-note').textContent = '';
+    updateProgress();
+
+    document.getElementById('thankyou-screen').classList.remove('visible');
+    document.getElementById('form-view').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  updateProgress();
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Rotorua Sustainability Survey — Sacred Heart College</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #1a3d12;
+      --green-mid:   #2e6620;
+      --green-light: #5a9c3e;
+      --green-pale:  #d6edd0;
+      --cream:       #f8f3eb;
+      --cream-dark:  #ede5d6;
+      --terra:       #b84b20;
+      --terra-light: #e07050;
+      --text:        #1c2d16;
+      --text-mid:    #3d5c30;
+      --text-light:  #7a9a6a;
+      --white:       #ffffff;
+      --shadow:      0 2px 12px rgba(26,61,18,0.10);
+      --shadow-lg:   0 8px 32px rgba(26,61,18,0.16);
+      --radius:      16px;
+      --radius-sm:   10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ─── TOP NAV ────────────────────────────────────── */
+    .top-nav {
+      background: var(--green);
+      color: var(--white);
+      padding: 0.4rem 1.5rem;
+      font-size: 0.82rem;
+    }
+
+    .top-nav a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      margin-right: 1rem;
+      opacity: 0.9;
+    }
+
+    .top-nav a:hover { opacity: 1; }
+
+    /* ─── HEADER ─────────────────────────────────────── */
+    .header {
+      background: linear-gradient(160deg, var(--green) 0%, var(--green-mid) 70%, #3d7a28 100%);
+      color: var(--white);
+      padding: 2.5rem 1.5rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 2px,
+        transparent 2px,
+        transparent 20px
+      );
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 100px;
+      padding: 0.3rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 0.6rem;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+      max-width: 380px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    /* ─── WAVE ────────────────────────────────────────── */
+    .wave {
+      display: block;
+      margin-top: -1px;
+      fill: var(--cream);
+    }
+
+    /* ─── PROGRESS ───────────────────────────────────── */
+    .progress-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--cream);
+      padding: 0.6rem 1.5rem;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      margin-bottom: 0.35rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--cream-dark);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green-light), var(--terra));
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ─── FORM ────────────────────────────────────────── */
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* ─── SECTION TITLE ───────────────────────────────── */
+    .section-title {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 2rem 0 0.8rem;
+      padding-left: 0.75rem;
+      border-left: 3px solid var(--green-light);
+    }
+
+    /* ─── CARD ────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .card:focus-within {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-1px);
+    }
+
+    .card.answered {
+      border-left: 3px solid var(--green-light);
+    }
+
+    .card-label {
+      font-size: 0.97rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 1.1rem;
+      line-height: 1.45;
+    }
+
+    .required-star {
+      color: var(--terra);
+      margin-left: 2px;
+    }
+
+    .select-input {
+      width: 100%;
+      border: 2px solid var(--cream-dark);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.85rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--cream);
+      transition: border-color 0.18s, background 0.18s;
+      outline: none;
+    }
+
+    .select-input:focus {
+      border-color: var(--green-light);
+      background: var(--white);
+    }
+
+    /* ─── YES / NO ────────────────────────────────────── */
+    .yn-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .yn-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 2px solid var(--cream-dark);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      background: var(--cream);
+      transition: all 0.18s ease;
+    }
+
+    .yn-btn:hover {
+      border-color: var(--green-light);
+      background: var(--green-pale);
+      color: var(--green);
+    }
+
+    .yn-btn.selected {
+      border-color: var(--green-mid);
+      background: var(--green-pale);
+      color: var(--green);
+    }
+
+    .yn-btn input { display: none; }
+
+    /* ─── LIKERT SCALE ────────────────────────────────── */
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.55rem;
+    }
+
+    .scale-labels span {
+      font-size: 0.64rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-light);
+      text-align: center;
+      flex: 1;
+    }
+
+    .scale-labels span:first-child { text-align: left; }
+    .scale-labels span:last-child  { text-align: right; }
+
+    .likert-group {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: space-between;
+    }
+
+    .likert-option {
+      flex: 1;
+      position: relative;
+    }
+
+    .likert-option input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .likert-option label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      cursor: pointer;
+    }
+
+    .likert-dot {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2.5px solid var(--cream-dark);
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s ease;
+      font-size: 1.1rem;
+    }
+
+    .likert-option:hover .likert-dot {
+      border-color: var(--green-light);
+      background: var(--green-pale);
+    }
+
+    .likert-option input:checked ~ label .likert-dot {
+      border-color: var(--green-mid);
+      background: var(--green-mid);
+      box-shadow: 0 0 0 3px var(--green-pale);
+    }
+
+    .likert-option input:checked ~ label .dot-inner {
+      background: var(--white);
+    }
+
+    .dot-inner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cream-dark);
+      transition: background 0.18s ease;
+    }
+
+    /* ─── SUBMIT ──────────────────────────────────────── */
+    .submit-area {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .unanswered-note {
+      font-size: 0.82rem;
+      color: var(--terra);
+      margin-bottom: 0.8rem;
+      min-height: 1.2em;
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, var(--green-mid), var(--green));
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      padding: 1rem 3rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(46,102,32,0.35);
+      transition: all 0.2s ease;
+      letter-spacing: 0.02em;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(46,102,32,0.4);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+
+    /* ─── THANK YOU SCREEN ────────────────────────────── */
+    .thankyou {
+      display: none;
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+
+    .thankyou.visible { display: block; animation: fadeUp 0.5s ease both; }
+
+    .ty-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--green-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      margin: 0 auto 1.5rem;
+    }
+
+    .thankyou h2 {
+      font-family: 'Lora', serif;
+      font-size: 1.8rem;
+      color: var(--green);
+      margin-bottom: 0.75rem;
+    }
+
+    .thankyou p {
+      color: var(--text-mid);
+      font-size: 0.97rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .restart-btn {
+      display: inline-block;
+      border: 2px solid var(--green-mid);
+      color: var(--green-mid);
+      border-radius: 100px;
+      padding: 0.7rem 2rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s ease;
+    }
+
+    .restart-btn:hover {
+      background: var(--green-pale);
+    }
+
+    /* ─── VALIDATION ──────────────────────────────────── */
+    .card.error {
+      border-left: 3px solid var(--terra);
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-view { animation: fadeUp 0.4s ease both; }
+
+    /* ─── FOOTER ──────────────────────────────────────── */
+    .footer {
+      background: var(--green);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 1.25rem;
+      font-size: 0.78rem;
+    }
+
+    .footer strong { color: rgba(255,255,255,0.9); }
+
+    @media (max-width: 380px) {
+      .likert-dot { width: 36px; height: 36px; }
+      .card { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="/rotorua-survey.html">📋 Survey</a>
+  <a href="/eqa-assessment.html">📊 EQA Assessment</a>
+  <a href="/admin/">🔬 View Dashboard →</a>
+</nav>
+
+<!-- ─── HEADER ─────────────────────────────────────── -->
+<header class="header">
+  <div class="header-badge">Sacred Heart College · Auckland</div>
+  <h1>Rotorua Sustainability Survey</h1>
+  <p>School Geography Research — your thoughts on sustainable tourism in Rotorua</p>
+</header>
+<svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
+</svg>
+
+<!-- ─── PROGRESS ───────────────────────────────────── -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Your progress</span>
+    <span id="progress-text">0 of 14 answered</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</div>
+
+<!-- ─── FORM ─────────────────────────────────────────── -->
+<div id="form-view" class="form-view">
+  <div class="form-container">
+    <form id="survey-form" novalidate>
+
+      <!-- About You -->
+      <p class="section-title">About You</p>
+
+      <div class="card" id="card-attraction" data-question="attraction">
+        <p class="card-label">Which attraction are you currently visiting? <span class="required-star">*</span></p>
+        <select class="select-input" name="attraction" required>
+          <option value="" disabled selected>Select an attraction</option>
+          <option value="Wai-O-Tapu Thermal Wonderland">Wai-O-Tapu Thermal Wonderland</option>
+          <option value="Te Puia">Te Puia</option>
+          <option value="Whakarewarewa Village">Whakarewarewa Village</option>
+          <option value="Polynesian Spa">Polynesian Spa</option>
+          <option value="Rotorua Museum / Te Whare Taonga">Rotorua Museum / Te Whare Taonga</option>
+          <option value="Skyline Rotorua">Skyline Rotorua</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="card" id="card-local" data-question="local">
+        <p class="card-label">I consider myself a local <span class="required-star">*</span></p>
+        <div class="yn-group">
+          <label class="yn-btn" id="yn-yes">
+            <input type="radio" name="local" value="yes" required>
+            ✅ Yes
+          </label>
+          <label class="yn-btn" id="yn-no">
+            <input type="radio" name="local" value="no">
+            🌏 No (visitor)
+          </label>
+        </div>
+      </div>
+
+      <!-- At the Attraction -->
+      <p class="section-title">At This Attraction</p>
+
+      <!-- Likert question template -->
+      <!-- 1 -->
+      <div class="card" id="card-q1" data-question="q1">
+        <p class="card-label">This attraction manages rubbish effectively <span class="required-star">*</span></p>
+        <div class="scale-labels">
+          <span>Strongly<br>Agree</span>
+          <span></span>
+          <span>Neutral</span>
+          <span></span>
+          <span>Strongly<br>Disagree</span>
+        </div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q1" value="5" id="q1-5"><label for="q1-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="4" id="q1-4"><label for="q1-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="3" id="q1-3"><label for="q1-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="2" id="q1-2"><label for="q1-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q1" value="1" id="q1-1"><label for="q1-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="card" id="card-q2" data-question="q2">
+        <p class="card-label">Recycling facilities are easy to access at this attraction <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q2" value="5" id="q2-5"><label for="q2-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="4" id="q2-4"><label for="q2-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="3" id="q2-3"><label for="q2-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="2" id="q2-2"><label for="q2-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q2" value="1" id="q2-1"><label for="q2-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="card" id="card-q3" data-question="q3">
+        <p class="card-label">The natural environment at this attraction is well looked after <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q3" value="5" id="q3-5"><label for="q3-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="4" id="q3-4"><label for="q3-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="3" id="q3-3"><label for="q3-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="2" id="q3-2"><label for="q3-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q3" value="1" id="q3-1"><label for="q3-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="card" id="card-q4" data-question="q4">
+        <p class="card-label">This attraction gives visitors clear information on how to reduce their environmental impact <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q4" value="5" id="q4-5"><label for="q4-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="4" id="q4-4"><label for="q4-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="3" id="q4-3"><label for="q4-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="2" id="q4-2"><label for="q4-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q4" value="1" id="q4-1"><label for="q4-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="card" id="card-q5" data-question="q5">
+        <p class="card-label">The attraction is accessible for a wide range of visitors, including families, elderly people and people with disabilities <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q5" value="5" id="q5-5"><label for="q5-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="4" id="q5-4"><label for="q5-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="3" id="q5-3"><label for="q5-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="2" id="q5-2"><label for="q5-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q5" value="1" id="q5-1"><label for="q5-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="card" id="card-q6" data-question="q6">
+        <p class="card-label">The attraction is not overcrowded <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q6" value="5" id="q6-5"><label for="q6-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="4" id="q6-4"><label for="q6-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="3" id="q6-3"><label for="q6-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="2" id="q6-2"><label for="q6-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q6" value="1" id="q6-1"><label for="q6-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <div class="card" id="card-q7" data-question="q7">
+        <p class="card-label">Public transport is easily accessible to get to and from this attraction <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q7" value="5" id="q7-5"><label for="q7-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="4" id="q7-4"><label for="q7-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="3" id="q7-3"><label for="q7-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="2" id="q7-2"><label for="q7-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q7" value="1" id="q7-1"><label for="q7-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 8 -->
+      <div class="card" id="card-q8" data-question="q8">
+        <p class="card-label">The pricing for this attraction is reasonable <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q8" value="5" id="q8-5"><label for="q8-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="4" id="q8-4"><label for="q8-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="3" id="q8-3"><label for="q8-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="2" id="q8-2"><label for="q8-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q8" value="1" id="q8-1"><label for="q8-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- Rotorua broadly -->
+      <p class="section-title">Rotorua Tourism — Broader Views</p>
+
+      <!-- 9 -->
+      <div class="card" id="card-q9" data-question="q9">
+        <p class="card-label">From what you have seen, tourism in Rotorua protects the natural environment <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q9" value="5" id="q9-5"><label for="q9-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="4" id="q9-4"><label for="q9-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="3" id="q9-3"><label for="q9-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="2" id="q9-2"><label for="q9-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q9" value="1" id="q9-1"><label for="q9-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="card" id="card-q10" data-question="q10">
+        <p class="card-label">Rotorua tourism represents Māori culture in a respectful way <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q10" value="5" id="q10-5"><label for="q10-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="4" id="q10-4"><label for="q10-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="3" id="q10-3"><label for="q10-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="2" id="q10-2"><label for="q10-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q10" value="1" id="q10-1"><label for="q10-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 11 -->
+      <div class="card" id="card-q11" data-question="q11">
+        <p class="card-label">Tourism in Rotorua benefits the local community <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q11" value="5" id="q11-5"><label for="q11-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="4" id="q11-4"><label for="q11-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="3" id="q11-3"><label for="q11-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="2" id="q11-2"><label for="q11-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q11" value="1" id="q11-1"><label for="q11-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- 12 -->
+      <div class="card" id="card-q12" data-question="q12">
+        <p class="card-label">Rotorua is managing tourism in a way that can continue in the long run <span class="required-star">*</span></p>
+        <div class="scale-labels"><span>Strongly<br>Agree</span><span></span><span>Neutral</span><span></span><span>Strongly<br>Disagree</span></div>
+        <div class="likert-group">
+          <div class="likert-option"><input type="radio" name="q12" value="5" id="q12-5"><label for="q12-5"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="4" id="q12-4"><label for="q12-4"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="3" id="q12-3"><label for="q12-3"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="2" id="q12-2"><label for="q12-2"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+          <div class="likert-option"><input type="radio" name="q12" value="1" id="q12-1"><label for="q12-1"><div class="likert-dot"><div class="dot-inner"></div></div></label></div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-area">
+        <p class="unanswered-note" id="unanswered-note"></p>
+        <button type="submit" class="submit-btn">Submit Survey →</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- ─── THANK YOU ───────────────────────────────────── -->
+<div id="thankyou-screen" class="thankyou form-container">
+  <div class="ty-icon">🌿</div>
+  <h2>Tēnā koe!</h2>
+  <p>Thank you for sharing your thoughts on sustainability in Rotorua. Your response has been recorded and will help Sacred Heart College's geography research.</p>
+  <button class="restart-btn" onclick="restartForm()">Submit another response</button>
+</div>
+
+<footer class="footer">
+  <strong>Sacred Heart College Auckland</strong> · School Geography Research · Rotorua Sustainability Survey
+</footer>
+
+<script>
+  const TOTAL = 14;
+
+  // ── Progress tracking ──────────────────────────────
+  function updateProgress() {
+    let answered = 0;
+
+    // Check attraction
+    const attraction = document.querySelector('select[name="attraction"]');
+    if (attraction && attraction.value) answered++;
+
+    // Check local (yes/no)
+    if (document.querySelector('input[name="local"]:checked')) answered++;
+
+    // Check likert questions
+    for (let i = 1; i <= 12; i++) {
+      if (document.querySelector(`input[name="q${i}"]:checked`)) answered++;
+    }
+
+    document.getElementById('progress-fill').style.width = `${(answered / TOTAL) * 100}%`;
+    document.getElementById('progress-text').textContent = `${answered} of ${TOTAL} answered`;
+  }
+
+  // ── Attraction dropdown ────────────────────────────
+  document.querySelector('select[name="attraction"]').addEventListener('change', (e) => {
+    const card = document.getElementById('card-attraction');
+    if (e.target.value) {
+      card.classList.add('answered');
+      card.classList.remove('error');
+    }
+    updateProgress();
+  });
+
+  // ── Yes/No visual toggle ───────────────────────────
+  document.querySelectorAll('.yn-btn input').forEach(input => {
+    input.addEventListener('change', () => {
+      document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+      input.closest('.yn-btn').classList.add('selected');
+      document.getElementById('card-local').classList.add('answered');
+      document.getElementById('card-local').classList.remove('error');
+      updateProgress();
+    });
+  });
+
+  // ── Likert answered state ──────────────────────────
+  document.querySelectorAll('.likert-option input').forEach(input => {
+    input.addEventListener('change', () => {
+      const card = input.closest('.card');
+      card.classList.add('answered');
+      card.classList.remove('error');
+      updateProgress();
+    });
+  });
+
+  // ── Form submission ────────────────────────────────
+  document.getElementById('survey-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    let allValid = true;
+    let firstError = null;
+
+    // Validate attraction
+    const attractionCard = document.getElementById('card-attraction');
+    const attractionValue = document.querySelector('select[name="attraction"]').value;
+    if (!attractionValue) {
+      attractionCard.classList.add('error');
+      if (!firstError) firstError = attractionCard;
+      allValid = false;
+    }
+
+    // Validate local
+    const localCard = document.getElementById('card-local');
+    if (!document.querySelector('input[name="local"]:checked')) {
+      localCard.classList.add('error');
+      if (!firstError) firstError = localCard;
+      allValid = false;
+    }
+
+    // Validate likerts
+    for (let i = 1; i <= 12; i++) {
+      const card = document.getElementById(`card-q${i}`);
+      if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+        card.classList.add('error');
+        if (!firstError) firstError = card;
+        allValid = false;
+      }
+    }
+
+    if (!allValid) {
+      document.getElementById('unanswered-note').textContent =
+        '⚠️ Please answer all questions before submitting.';
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const fd = new FormData(this);
+    const payload = {
+      attraction: fd.get('attraction'),
+      is_local: fd.get('local')
+    };
+
+    for (let i = 1; i <= 12; i++) {
+      payload[`q${i}`] = Number(fd.get(`q${i}`));
+    }
+
+    try {
+      const response = await fetch('/api/survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Unable to submit survey.');
+      }
+    } catch (error) {
+      document.getElementById('unanswered-note').textContent =
+        '⚠️ Unable to submit right now. Please try again.';
+      return;
+    }
+
+    // Show thank you
+    document.getElementById('form-view').style.display = 'none';
+    const ty = document.getElementById('thankyou-screen');
+    ty.classList.add('visible');
+    ty.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // ── Restart ────────────────────────────────────────
+  function restartForm() {
+    document.getElementById('survey-form').reset();
+    document.querySelectorAll('.card').forEach(c => {
+      c.classList.remove('answered', 'error');
+    });
+    document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('unanswered-note').textContent = '';
+    updateProgress();
+
+    document.getElementById('thankyou-screen').classList.remove('visible');
+    document.getElementById('form-view').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
