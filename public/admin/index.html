@@ -397,7 +397,27 @@
       .header-inner { align-items: flex-start; }
       .tab-bar { flex-wrap: wrap; }
     }
+
+    /* ─── MAP & INTERVIEWS ────────────────────────────── */
+    .map-box-lg { height: 440px; border-radius: var(--radius-sm, 10px); overflow: hidden; border: 1px solid var(--cream-dark); }
+    .map-legend { font-size: 0.8rem; color: #3d5c30; margin-top: 0.6rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    .map-legend .key { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .map-legend .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .leaflet-popup-content { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; }
+    .leaflet-popup-content audio { width: 220px; margin-top: 0.4rem; }
+    .mini-btn {
+      border: none; border-radius: 100px; padding: 0.35rem 0.7rem; font-size: 0.76rem; font-weight: 600;
+      cursor: pointer; background: var(--green-pale, #d6edd0); color: #2e6620; margin-right: 0.25rem;
+    }
+    .mini-btn:hover { background: #c4e0bb; }
+    .mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .transcript-cell { max-width: 280px; white-space: pre-wrap; font-size: 0.82rem; color: #3d5c30; }
+    .src-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: #7a9a6a; }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
   <nav style="background:var(--green);color:var(--white);text-align:center;padding:0.45rem 1.25rem;font-size:0.82rem;">
@@ -406,6 +426,8 @@
     <a href="/rotorua-survey.html" style="color:var(--white);text-decoration:none;font-weight:600;margin:0 0.55rem;">📋 Survey</a>
     <span style="opacity:0.4">|</span>
     <a href="/eqa-assessment.html" style="color:var(--white);text-decoration:none;font-weight:600;margin:0 0.55rem;">📊 EQA Assessment</a>
+    <span style="opacity:0.4">|</span>
+    <a href="/interview.html" style="color:var(--white);text-decoration:none;font-weight:600;margin:0 0.55rem;">🎙️ Interview</a>
     <span style="opacity:0.4">|</span>
     <a href="/admin/" style="color:var(--white);text-decoration:none;font-weight:600;margin:0 0.55rem;">🔬 Dashboard</a>
   </nav>
@@ -427,6 +449,7 @@
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="survey">Survey Responses</button>
       <button class="tab-btn" data-tab="eqa">EQA Assessments</button>
+      <button class="tab-btn" data-tab="interviews">Map &amp; Interviews</button>
     </div>
   </div>
 
@@ -619,6 +642,64 @@
         <a class="export-btn" href="/api/export/eqa.csv">⬇ Download EQA CSV</a>
       </div>
     </section>
+
+    <section id="tab-interviews" class="tab-content">
+      <div class="stat-grid">
+        <div class="card stat-card">
+          <h3>Total Interviews</h3>
+          <div class="stat-value" id="int-total">0</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Transcribed</h3>
+          <div class="stat-value" id="int-transcribed">0</div>
+          <div class="stat-sub" id="int-transcribed-sub">0% of interviews</div>
+        </div>
+        <div class="card stat-card">
+          <h3>Map Points</h3>
+          <div class="stat-value" id="int-points">0</div>
+          <div class="stat-sub">located records</div>
+        </div>
+      </div>
+
+      <div class="section-title">Research Map — Rotorua</div>
+      <div class="card">
+        <div class="map-box-lg" id="dash-map"></div>
+        <div class="map-legend">
+          <span class="key"><span class="dot" style="background:#2e6620;"></span> Attraction (survey)</span>
+          <span class="key"><span class="dot" style="background:#5a9c3e;"></span> EQA good</span>
+          <span class="key"><span class="dot" style="background:#c4a020;"></span> EQA moderate</span>
+          <span class="key"><span class="dot" style="background:#b84b20;"></span> EQA poor</span>
+          <span class="key"><span class="dot" style="background:#1c5fb8;"></span> Interview</span>
+        </div>
+      </div>
+
+      <div class="table-card card">
+        <div class="table-header">
+          <h4>All Interviews</h4>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Interviewer</th>
+                <th>Interviewee</th>
+                <th>Recording</th>
+                <th>Transcript</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="interview-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="export-card">
+        <a class="export-btn" href="/api/export/interviews.csv">⬇ Download Interviews CSV</a>
+      </div>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -627,10 +708,38 @@
       stats: null,
       surveyRows: [],
       eqaRows: [],
+      interviewRows: [],
       surveyPage: 1,
       rowsPerPage: 10,
-      charts: {}
+      charts: {},
+      map: null,
+      mapLayer: null
     };
+
+    // Known coordinates for the five fixed attractions, used to place points on
+    // the map when a record doesn't carry its own latitude/longitude.
+    const ATTRACTION_COORDS = {
+      'Buried Maori Village': [-38.21, 176.36],
+      'Agrodome':             [-38.06, 176.21],
+      'Luge':                 [-38.15, 176.26],
+      'Te Puia':              [-38.16, 176.25],
+      'Rotorua Ziplines':     [-38.10, 176.18]
+    };
+    const ROTORUA_CENTER = [-38.137, 176.249];
+
+    function resolveCoords(row) {
+      const lat = Number(row.latitude), lng = Number(row.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) return [lat, lng];
+      if (row.location && ATTRACTION_COORDS[row.location]) return ATTRACTION_COORDS[row.location];
+      if (row.attraction && ATTRACTION_COORDS[row.attraction]) return ATTRACTION_COORDS[row.attraction];
+      return null;
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
     const questionLabels = [
       'Rubbish management',
@@ -1100,11 +1209,13 @@
     }
 
     async function deleteRow(type, id) {
-      if (!confirm(`Delete this ${type === 'survey' ? 'survey response' : 'EQA assessment'}? This cannot be undone.`)) return;
+      const labels = { survey: 'survey response', eqa: 'EQA assessment', interviews: 'interview (and its recording)' };
+      if (!confirm(`Delete this ${labels[type] || 'record'}? This cannot be undone.`)) return;
       try {
         const r = await fetch(`/api/admin/${type}/${id}`, { method: 'DELETE' });
         if (!r.ok) throw new Error();
         await loadAllData();
+        if (type === 'interviews') switchTab('interviews');
       } catch (_) {
         alert('Failed to delete. Please try again.');
       }
@@ -1151,6 +1262,148 @@
       }).join('');
     }
 
+    // ─── Interviews ──────────────────────────────────────
+    function eqaColor(score) {
+      if (score == null) return '#7a9a6a';
+      if (score <= 15) return '#5a9c3e';
+      if (score <= 30) return '#c4a020';
+      if (score <= 45) return '#d05820';
+      return '#b84b20';
+    }
+
+    function renderInterviewStats(rows) {
+      const total = rows.length;
+      const transcribed = rows.filter(r => r.transcript && r.transcript.trim()).length;
+      const located = rows.filter(r => resolveCoords(r)).length;
+      document.getElementById('int-total').textContent = total;
+      document.getElementById('int-transcribed').textContent = transcribed;
+      document.getElementById('int-transcribed-sub').textContent =
+        (total ? Math.round((transcribed / total) * 100) : 0) + '% of interviews';
+      document.getElementById('int-points').textContent = located;
+    }
+
+    function renderInterviewTable(rows) {
+      const tbody = document.getElementById('interview-table');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No interviews yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(row => {
+        const date = row.submitted_at ? row.submitted_at.split(' ')[0] : '';
+        const loc = row.location === 'Other' && row.location_label
+          ? `Other — ${escapeHtml(row.location_label)}` : escapeHtml(row.location || '');
+        const audio = row.audio_file
+          ? `<audio controls preload="none" style="width:150px" src="/api/admin/interviews/${row.id}/audio"></audio>`
+          : '<span style="color:#7a9a6a">no audio</span>';
+        const transcript = row.transcript ? escapeHtml(row.transcript) : '<em style="color:#7a9a6a">none yet</em>';
+        const src = row.transcript_source ? `<div class="src-tag">${escapeHtml(row.transcript_source)}</div>` : '';
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${loc}</td>
+            <td>${escapeHtml(row.interviewer || '')}</td>
+            <td>${escapeHtml(row.interviewee || '')}</td>
+            <td>${audio}</td>
+            <td class="transcript-cell" id="tr-cell-${row.id}">${transcript}${src}</td>
+            <td>${escapeHtml(row.notes || '')}</td>
+            <td style="white-space:nowrap">
+              <button class="mini-btn" onclick="transcribeInterview(${row.id}, this)"${row.audio_file ? '' : ' disabled'}>Transcribe</button>
+              <button class="mini-btn" onclick="editTranscript(${row.id})">Edit</button>
+              <button class="delete-btn" onclick="deleteRow('interviews',${row.id})" title="Delete this interview">×</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function transcribeInterview(id, btn) {
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      try {
+        const r = await fetch(`/api/admin/interviews/${id}/transcribe`, { method: 'POST' });
+        const data = await r.json();
+        if (!r.ok || !data.success) throw new Error(data.error || 'Transcription failed.');
+        await loadAllData();
+        switchTab('interviews');
+      } catch (err) {
+        alert(err.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Transcribe'; }
+      }
+    }
+
+    async function editTranscript(id) {
+      const row = state.interviewRows.find(r => r.id === id);
+      const current = row ? (row.transcript || '') : '';
+      const next = prompt('Edit transcript:', current);
+      if (next === null) return;
+      try {
+        const r = await fetch(`/api/admin/interviews/${id}/transcript`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript: next })
+        });
+        if (!r.ok) throw new Error();
+        await loadAllData();
+        switchTab('interviews');
+      } catch (_) {
+        alert('Failed to save transcript.');
+      }
+    }
+
+    // ─── Map ─────────────────────────────────────────────
+    function renderMap() {
+      if (!state.map) {
+        state.map = L.map('dash-map').setView(ROTORUA_CENTER, 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19, attribution: '© OpenStreetMap contributors'
+        }).addTo(state.map);
+        state.mapLayer = L.layerGroup().addTo(state.map);
+      }
+      state.mapLayer.clearLayers();
+      const bounds = [];
+
+      // Attractions (from survey aggregates)
+      const byAttraction = (state.stats && state.stats.survey && state.stats.survey.by_attraction) || [];
+      byAttraction.forEach(a => {
+        const coords = ATTRACTION_COORDS[a.attraction];
+        if (!coords) return;
+        const radius = 8 + Math.min(a.count, 20);
+        L.circleMarker(coords, { radius, color: '#1a3d12', weight: 1, fillColor: '#2e6620', fillOpacity: 0.7 })
+          .bindPopup(`<strong>${escapeHtml(a.attraction)}</strong><br>${a.count} survey response(s)<br>Env: ${a.avg_env.toFixed(1)}/5 · Social: ${a.avg_social.toFixed(1)}/5`)
+          .addTo(state.mapLayer);
+        bounds.push(coords);
+      });
+
+      // EQA points
+      state.eqaRows.forEach(row => {
+        const coords = resolveCoords(row);
+        if (!coords) return;
+        const score = row.total_score;
+        L.circleMarker(coords, { radius: 9, color: '#fff', weight: 2, fillColor: eqaColor(score), fillOpacity: 0.95 })
+          .bindPopup(`<strong>EQA: ${escapeHtml(row.location || '')}</strong>${row.location_label ? '<br>' + escapeHtml(row.location_label) : ''}<br>Penalty score: ${score ?? '—'}/60<br>${escapeHtml(row.assessor || '')}`)
+          .addTo(state.mapLayer);
+        bounds.push(coords);
+      });
+
+      // Interview points
+      state.interviewRows.forEach(row => {
+        const coords = resolveCoords(row);
+        if (!coords) return;
+        const audio = row.audio_file
+          ? `<audio controls preload="none" src="/api/admin/interviews/${row.id}/audio"></audio>` : '';
+        const snippet = row.transcript ? escapeHtml(row.transcript.slice(0, 160)) + (row.transcript.length > 160 ? '…' : '') : '<em>no transcript yet</em>';
+        L.marker(coords, {
+          icon: L.divIcon({ className: '', html: '<div style="background:#1c5fb8;width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>', iconSize: [16,16], iconAnchor: [8,16] })
+        })
+          .bindPopup(`<strong>🎙️ ${escapeHtml(row.location || '')}</strong>${row.location_label ? '<br>' + escapeHtml(row.location_label) : ''}<br>${escapeHtml(row.interviewer || '')}<br>${snippet}<br>${audio}`)
+          .addTo(state.mapLayer);
+        bounds.push(coords);
+      });
+
+      if (bounds.length) {
+        try { state.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); } catch (_) {}
+      }
+      setTimeout(() => state.map && state.map.invalidateSize(), 0);
+    }
+
     function buildChart(canvasId, type, data, options) {
       if (state.charts[canvasId]) {
         state.charts[canvasId].destroy();
@@ -1171,15 +1424,17 @@
       clearError();
       refreshBtn.disabled = true;
       try {
-        const [stats, surveyRows, eqaRows] = await Promise.all([
+        const [stats, surveyRows, eqaRows, interviewRows] = await Promise.all([
           fetchJson('/api/admin/stats'),
           fetchJson('/api/admin/survey'),
-          fetchJson('/api/admin/eqa')
+          fetchJson('/api/admin/eqa'),
+          fetchJson('/api/admin/interviews')
         ]);
 
         state.stats = stats;
         state.surveyRows = surveyRows;
         state.eqaRows = eqaRows;
+        state.interviewRows = interviewRows;
 
         renderSurveyStats(stats.survey);
         renderSurveyCharts(stats.survey);
@@ -1189,6 +1444,10 @@
         renderEqaStats(stats.eqa);
         renderEqaCharts(stats.eqa);
         renderEqaTable(eqaRows);
+
+        renderInterviewStats(interviewRows);
+        renderInterviewTable(interviewRows);
+        renderMap();
       } catch (error) {
         showError('Unable to load dashboard data. Please try again.');
       } finally {
@@ -1211,13 +1470,17 @@
       }
     });
 
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      const section = document.getElementById(`tab-${name}`);
+      if (section) section.classList.add('active');
+      // Leaflet needs a visible container to size itself correctly.
+      if (name === 'interviews' && state.map) setTimeout(() => state.map.invalidateSize(), 0);
+    }
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-      });
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
     refreshBtn.addEventListener('click', loadAllData);

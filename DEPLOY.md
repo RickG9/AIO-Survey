@@ -8,6 +8,11 @@ survives restarts and redeploys.
 The admin dashboard (`/admin`) and its APIs require a password set via the
 `ADMIN_PASSWORD` environment variable — **the app refuses to start without it.**
 
+Interview audio recordings are stored next to the database (in `data/audio/`),
+so they persist exactly like the survey data. Transcription is optional and uses
+**Deepgram**: set a `DEEPGRAM_API_KEY` to enable the "Generate transcript" button
+in the dashboard. Without it, recording still works — you just can't auto-transcribe.
+
 ---
 
 ## Option A — Docker (recommended)
@@ -31,6 +36,8 @@ systemctl enable --now docker
 git clone https://github.com/<your-user>/AIO-Survey.git
 cd AIO-Survey
 printf 'ADMIN_PASSWORD=choose-a-strong-password\n' > .env
+# Optional: enable interview transcription
+printf 'DEEPGRAM_API_KEY=your-deepgram-key\n' >> .env
 ```
 
 ### 4. Build and run

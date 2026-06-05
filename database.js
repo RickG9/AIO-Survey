@@ -5,6 +5,11 @@ const Database = require('better-sqlite3');
 const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
+// Audio recordings from the interview tool live alongside the DB so the Docker
+// named volume (mounted at DATA_DIR) keeps them across redeploys.
+const audioDir = path.join(dataDir, 'audio');
+fs.mkdirSync(audioDir, { recursive: true });
+
 const dbPath = path.join(dataDir, 'responses.db');
 const db = new Database(dbPath);
 
@@ -15,6 +20,9 @@ db.exec(`
     respondent_name TEXT,
     attraction TEXT,
     is_local TEXT,
+    location_label TEXT,
+    latitude REAL,
+    longitude REAL,
     q1 INTEGER,
     q2 INTEGER,
     q3 INTEGER,
@@ -33,6 +41,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     submitted_at TEXT DEFAULT (datetime('now')),
     location TEXT,
+    location_label TEXT,
+    latitude REAL,
+    longitude REAL,
     assess_date TEXT,
     assessor TEXT,
     lq INTEGER,
@@ -45,9 +56,37 @@ db.exec(`
     total_score INTEGER,
     notes TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS interviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    submitted_at TEXT DEFAULT (datetime('now')),
+    location TEXT,
+    location_label TEXT,
+    latitude REAL,
+    longitude REAL,
+    interviewer TEXT,
+    interviewee TEXT,
+    audio_file TEXT,
+    transcript TEXT,
+    transcript_source TEXT,
+    notes TEXT
+  );
 `);
 
-// Migration: add respondent_name to existing databases that were created before this column.
-try { db.exec(`ALTER TABLE survey_responses ADD COLUMN respondent_name TEXT`); } catch (_) {}
+// Migrations: add columns to databases created before they existed.
+// Each is wrapped individually so an already-applied migration is a no-op.
+const migrations = [
+  `ALTER TABLE survey_responses ADD COLUMN respondent_name TEXT`,
+  `ALTER TABLE survey_responses ADD COLUMN location_label TEXT`,
+  `ALTER TABLE survey_responses ADD COLUMN latitude REAL`,
+  `ALTER TABLE survey_responses ADD COLUMN longitude REAL`,
+  `ALTER TABLE eqa_assessments ADD COLUMN location_label TEXT`,
+  `ALTER TABLE eqa_assessments ADD COLUMN latitude REAL`,
+  `ALTER TABLE eqa_assessments ADD COLUMN longitude REAL`
+];
+for (const sql of migrations) {
+  try { db.exec(sql); } catch (_) { /* column already exists */ }
+}
 
 module.exports = db;
+module.exports.audioDir = audioDir;

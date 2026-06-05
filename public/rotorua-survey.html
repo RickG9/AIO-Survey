@@ -513,7 +513,9 @@
           <option value="Luge">Luge</option>
           <option value="Te Puia">Te Puia</option>
           <option value="Rotorua Ziplines">Rotorua Ziplines</option>
+          <option value="Other">Other / elsewhere in Rotorua</option>
         </select>
+        <input class="select-input" type="text" name="location_label" id="location-label" placeholder="Where? e.g. Lakefront, Government Gardens" maxlength="120" style="display:none;margin-top:0.7rem;">
       </div>
 
       <div class="card" id="card-local" data-question="local">
@@ -745,10 +747,13 @@
 
   // ── Attraction select state ────────────────────────
   const attractionSelect = document.getElementById('attraction');
+  const locationLabelInput = document.getElementById('location-label');
   attractionSelect.addEventListener('change', () => {
     const card = document.getElementById('card-attraction');
     card.classList.add('answered');
     card.classList.remove('error');
+    // Show a free-text "where?" box only when "Other" is chosen.
+    locationLabelInput.style.display = attractionSelect.value === 'Other' ? 'block' : 'none';
     updateProgress();
   });
 
@@ -818,6 +823,7 @@
     const payload = {
       respondent_name: document.getElementById('respondent-name').value.trim(),
       attraction: attractionSelect.value,
+      location_label: attractionSelect.value === 'Other' ? locationLabelInput.value.trim() : '',
       is_local: document.querySelector('input[name="local"]:checked').value
     };
 
@@ -859,6 +865,7 @@
       c.classList.remove('answered', 'error');
     });
     document.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('selected'));
+    locationLabelInput.style.display = 'none';
     document.getElementById('unanswered-note').textContent = '';
     updateProgress();
 

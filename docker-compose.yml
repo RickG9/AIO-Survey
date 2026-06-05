@@ -5,11 +5,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Set ADMIN_PASSWORD in a .env file next to this compose file.
+      # Set these in a .env file next to this compose file.
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # Optional: enables interview transcription. Leave unset to disable.
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY:-}
       - DATA_DIR=/app/data
     volumes:
-      # Named volume keeps the SQLite database across rebuilds/redeploys.
+      # Named volume keeps the SQLite database AND interview audio across redeploys.
       - aio-data:/app/data
 
 volumes:

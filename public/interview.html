@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Field Interview — Sacred Heart College</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:#1a3d12; --green-mid:#2e6620; --green-light:#5a9c3e; --green-pale:#d6edd0;
+      --cream:#f8f3eb; --cream-dark:#ede5d6; --terra:#b84b20; --terra-light:#e07050;
+      --text:#1c2d16; --text-mid:#3d5c30; --text-light:#7a9a6a; --white:#fff;
+      --shadow:0 2px 12px rgba(26,61,18,0.10); --shadow-lg:0 8px 32px rgba(26,61,18,0.16);
+      --radius:16px; --radius-sm:10px;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; line-height:1.5; }
+
+    .top-nav { background:var(--green); color:var(--white); text-align:center; padding:0.45rem 1.25rem; font-size:0.82rem; }
+    .top-nav a { color:var(--white); text-decoration:none; font-weight:600; margin:0 0.55rem; }
+    .top-nav a:hover { text-decoration:underline; }
+    .top-nav span { opacity:0.4; }
+
+    .header {
+      background:linear-gradient(160deg,var(--green) 0%,var(--green-mid) 70%,#3d7a28 100%);
+      color:var(--white); padding:2rem 1.5rem 3.2rem; text-align:center; position:relative; overflow:hidden;
+    }
+    .header-badge {
+      display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);
+      border-radius:100px; padding:0.3rem 1rem; font-size:0.72rem; font-weight:600;
+      letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.9rem;
+    }
+    .header h1 { font-family:'Lora',serif; font-size:clamp(1.5rem,5vw,2rem); font-weight:600; margin-bottom:0.4rem; }
+    .header p { font-size:0.92rem; opacity:0.85; max-width:420px; margin:0 auto; font-weight:300; }
+    .wave { display:block; margin-top:-1px; fill:var(--cream); }
+
+    .container { max-width:620px; margin:0 auto; padding:1.5rem 1rem 3rem; }
+
+    .card { background:var(--white); border-radius:var(--radius); padding:1.3rem 1.3rem 1.4rem; margin-bottom:1rem; box-shadow:var(--shadow); }
+    .section-title { font-family:'Lora',serif; font-size:1.05rem; font-weight:600; color:var(--green); margin:1.6rem 0 0.7rem; padding-left:0.75rem; border-left:3px solid var(--green-light); }
+
+    .field-label { font-size:0.85rem; font-weight:600; color:var(--text-mid); margin-bottom:0.45rem; }
+    .field-input {
+      width:100%; border:2px solid var(--cream-dark); border-radius:var(--radius-sm); padding:0.7rem 0.85rem;
+      font-family:'DM Sans',sans-serif; font-size:0.95rem; color:var(--text); background:var(--cream); outline:none;
+      transition:border-color 0.18s ease, background 0.18s ease;
+    }
+    .field-input:focus { border-color:var(--green-light); background:var(--white); }
+    textarea.field-input { resize:vertical; min-height:90px; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media (max-width:460px){ .row2 { grid-template-columns:1fr; } }
+
+    .map-picker { margin-top:0.7rem; }
+    .map-box { height:230px; border-radius:var(--radius-sm); overflow:hidden; border:2px solid var(--cream-dark); }
+    .map-hint { font-size:0.78rem; color:var(--text-light); margin-top:0.4rem; }
+
+    .prompt-list { list-style:none; }
+    .prompt-list li {
+      background:var(--green-pale); border-radius:var(--radius-sm); padding:0.6rem 0.8rem; margin-bottom:0.5rem;
+      font-size:0.9rem; color:var(--text-mid);
+    }
+    .prompt-list li::before { content:'🎙️ '; }
+    .prompt-note { font-size:0.8rem; color:var(--text-light); margin-top:0.3rem; }
+
+    /* Recorder */
+    .rec-row { display:flex; align-items:center; gap:0.9rem; flex-wrap:wrap; }
+    .rec-btn {
+      border:none; border-radius:100px; padding:0.85rem 1.6rem; font-family:'DM Sans',sans-serif;
+      font-size:0.95rem; font-weight:700; cursor:pointer; color:var(--white);
+      background:linear-gradient(135deg,var(--terra),var(--terra-light)); box-shadow:0 4px 16px rgba(184,75,32,0.3);
+      transition:transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .rec-btn:hover { transform:translateY(-2px); }
+    .rec-btn.recording { background:linear-gradient(135deg,#8a1414,#b83030); animation:pulse 1.2s infinite; }
+    .rec-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(184,48,48,0.5);} 50%{box-shadow:0 0 0 10px rgba(184,48,48,0);} }
+    .rec-timer { font-variant-numeric:tabular-nums; font-weight:700; font-size:1.1rem; color:var(--text-mid); }
+    .rec-status { font-size:0.82rem; color:var(--text-light); margin-top:0.6rem; min-height:1.1em; }
+    audio { width:100%; margin-top:0.8rem; }
+
+    .submit-area { margin-top:1.6rem; text-align:center; }
+    .submit-btn {
+      background:linear-gradient(135deg,var(--green-mid),var(--green)); color:var(--white); border:none;
+      border-radius:100px; padding:1rem 3rem; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:700;
+      cursor:pointer; box-shadow:0 4px 16px rgba(46,102,32,0.35); transition:all 0.2s ease;
+    }
+    .submit-btn:hover { transform:translateY(-2px); }
+    .submit-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .note { font-size:0.85rem; color:var(--terra); margin-bottom:0.7rem; min-height:1.2em; }
+
+    .thankyou { display:none; text-align:center; padding:3rem 1.5rem; }
+    .thankyou.visible { display:block; }
+    .ty-icon { width:78px; height:78px; background:var(--green-pale); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.1rem; margin:0 auto 1.3rem; }
+    .thankyou h2 { font-family:'Lora',serif; color:var(--green); font-size:1.6rem; margin-bottom:0.6rem; }
+    .thankyou p { color:var(--text-mid); margin-bottom:1.3rem; }
+    .restart-btn { border:2px solid var(--green-mid); color:var(--green-mid); background:transparent; border-radius:100px; padding:0.7rem 2rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+    .footer { background:var(--green); color:rgba(255,255,255,0.6); text-align:center; padding:1.25rem; font-size:0.78rem; }
+    .footer strong { color:rgba(255,255,255,0.9); }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="/">🏠 Home</a><span>|</span>
+  <a href="/eqa-assessment.html">📊 EQA</a><span>|</span>
+  <a href="/interview.html">🎙️ Interview</a><span>|</span>
+  <a href="/admin/">🔬 Dashboard →</a>
+</nav>
+
+<header class="header">
+  <div class="header-badge">Sacred Heart College · Auckland · Staff</div>
+  <h1>Field Interview Recorder</h1>
+  <p>Record short interviews with the public, pin the location, and transcribe them later from the dashboard.</p>
+</header>
+<svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
+</svg>
+
+<div id="form-view" class="container">
+
+  <p class="section-title">Where & Who</p>
+  <div class="card">
+    <div class="field-label">Location <span style="color:var(--terra)">*</span></div>
+    <select class="field-input" id="location-name">
+      <option value="" selected disabled>Select a location</option>
+      <option value="Buried Maori Village">Buried Maori Village</option>
+      <option value="Agrodome">Agrodome</option>
+      <option value="Luge">Luge</option>
+      <option value="Te Puia">Te Puia</option>
+      <option value="Rotorua Ziplines">Rotorua Ziplines</option>
+      <option value="Other">Other / elsewhere in Rotorua</option>
+    </select>
+    <div class="map-picker" id="map-picker" style="display:none;">
+      <input class="field-input" type="text" id="location-label" placeholder="Name this spot, e.g. Lakefront, Government Gardens" maxlength="120" style="margin:0.6rem 0;">
+      <div class="map-box" id="map-box"></div>
+      <p class="map-hint" id="map-hint">Tap the map to drop a pin where you are.</p>
+    </div>
+
+    <div class="row2" style="margin-top:0.9rem;">
+      <div>
+        <div class="field-label">Interviewer (you)</div>
+        <input class="field-input" type="text" id="interviewer" placeholder="Your name" maxlength="80">
+      </div>
+      <div>
+        <div class="field-label">Interviewee (optional)</div>
+        <input class="field-input" type="text" id="interviewee" placeholder="Name / description" maxlength="80">
+      </div>
+    </div>
+  </div>
+
+  <p class="section-title">Suggested Questions</p>
+  <div class="card">
+    <ul class="prompt-list">
+      <li>How do you think tourism here affects the local environment?</li>
+      <li>Have you noticed litter, noise, or crowding because of visitors?</li>
+      <li>Do you feel tourism benefits the local community? In what way?</li>
+      <li>Is Māori culture represented respectfully here?</li>
+      <li>What would make tourism in Rotorua more sustainable?</li>
+    </ul>
+    <p class="prompt-note">These are prompts — ask in your own words and follow up naturally.</p>
+  </div>
+
+  <p class="section-title">Record</p>
+  <div class="card">
+    <div class="rec-row">
+      <button type="button" class="rec-btn" id="rec-btn">● Start recording</button>
+      <span class="rec-timer" id="rec-timer">00:00</span>
+    </div>
+    <p class="rec-status" id="rec-status"></p>
+    <audio id="audio-preview" controls style="display:none;"></audio>
+
+    <div id="live-wrap" style="margin-top:1rem; display:none;">
+      <div class="field-label">Live transcript (rough — edit freely)</div>
+      <textarea class="field-input" id="live-transcript" placeholder="Live transcript appears here on supported phones..."></textarea>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div class="field-label">Notes (optional)</div>
+      <textarea class="field-input" id="notes" placeholder="Anything worth remembering about this interview"></textarea>
+    </div>
+  </div>
+
+  <div class="submit-area">
+    <p class="note" id="note"></p>
+    <button type="button" class="submit-btn" id="submit-btn">Save interview →</button>
+  </div>
+</div>
+
+<div id="thankyou" class="thankyou container">
+  <div class="ty-icon">🎙️</div>
+  <h2>Interview saved!</h2>
+  <p>The recording is stored. You can transcribe and review it from the Dashboard.</p>
+  <button class="restart-btn" onclick="resetAll()">Record another</button>
+</div>
+
+<footer class="footer">
+  <strong>Sacred Heart College Auckland</strong> · School Geography Research · Field Interview Tool
+</footer>
+
+<script>
+  // ── Location + map ───────────────────────────────────
+  const ATTRACTION_COORDS = {
+    'Buried Maori Village': [-38.21, 176.36],
+    'Agrodome':             [-38.06, 176.21],
+    'Luge':                 [-38.15, 176.26],
+    'Te Puia':              [-38.16, 176.25],
+    'Rotorua Ziplines':     [-38.10, 176.18]
+  };
+  const ROTORUA_CENTER = [-38.137, 176.249];
+
+  let map = null, marker = null;
+  let lat = '', lng = '';
+
+  function ensureMap() {
+    if (map) { setTimeout(() => map.invalidateSize(), 0); return; }
+    map = L.map('map-box').setView(ROTORUA_CENTER, 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    map.on('click', (e) => placeMarker(e.latlng.lat, e.latlng.lng));
+    setTimeout(() => map.invalidateSize(), 0);
+  }
+  function placeMarker(la, ln) {
+    if (!marker) {
+      marker = L.marker([la, ln], { draggable: true }).addTo(map);
+      marker.on('dragend', () => { const p = marker.getLatLng(); lat = +p.lat.toFixed(6); lng = +p.lng.toFixed(6); });
+    } else { marker.setLatLng([la, ln]); }
+    map.setView([la, ln], Math.max(map.getZoom(), 14));
+    lat = +la.toFixed(6); lng = +ln.toFixed(6);
+    document.getElementById('map-hint').textContent = '📍 Pin set. Tap again or drag it to adjust.';
+  }
+
+  document.getElementById('location-name').addEventListener('change', function () {
+    this.style.borderColor = '';
+    const picker = document.getElementById('map-picker');
+    if (this.value === 'Other') {
+      picker.style.display = 'block';
+      ensureMap();
+      if (!marker) { lat = ''; lng = ''; }
+      document.getElementById('map-hint').textContent = 'Tap the map to drop a pin where you are.';
+    } else {
+      picker.style.display = 'none';
+      const c = ATTRACTION_COORDS[this.value];
+      if (c) { lat = c[0]; lng = c[1]; } else { lat = ''; lng = ''; }
+    }
+  });
+
+  // ── Recorder ─────────────────────────────────────────
+  let mediaRecorder = null, chunks = [], audioBlob = null, stream = null;
+  let timerInt = null, seconds = 0;
+  let recognition = null;
+
+  const recBtn = document.getElementById('rec-btn');
+  const recTimer = document.getElementById('rec-timer');
+  const recStatus = document.getElementById('rec-status');
+  const audioPreview = document.getElementById('audio-preview');
+
+  function fmt(s) { const m = Math.floor(s/60), ss = s%60; return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; }
+
+  function startTimer() { seconds = 0; recTimer.textContent = '00:00'; timerInt = setInterval(() => { seconds++; recTimer.textContent = fmt(seconds); }, 1000); }
+  function stopTimer() { clearInterval(timerInt); }
+
+  // Optional live transcript (works mainly on Android/Chrome; iPhone Safari won't).
+  function setupRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.continuous = true; r.interimResults = true; r.lang = 'en-NZ';
+    let finalText = document.getElementById('live-transcript').value;
+    r.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t + ' '; else interim += t;
+      }
+      document.getElementById('live-transcript').value = (finalText + interim).trim();
+    };
+    r.onerror = () => {};
+    return r;
+  }
+
+  async function startRecording() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      recStatus.textContent = '⚠️ Microphone access was blocked. Allow it and try again.';
+      return;
+    }
+    chunks = []; audioBlob = null;
+    audioPreview.style.display = 'none';
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      audioPreview.src = URL.createObjectURL(audioBlob);
+      audioPreview.style.display = 'block';
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+
+    // try live transcript
+    document.getElementById('live-wrap').style.display = 'block';
+    recognition = setupRecognition();
+    if (recognition) { try { recognition.start(); } catch (_) {} recStatus.textContent = '🔴 Recording… (live transcript on)'; }
+    else { recStatus.textContent = '🔴 Recording… (audio only on this device — transcribe later from the dashboard)'; }
+
+    recBtn.textContent = '■ Stop recording';
+    recBtn.classList.add('recording');
+    startTimer();
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (recognition) { try { recognition.stop(); } catch (_) {} }
+    stopTimer();
+    recBtn.textContent = '● Re-record';
+    recBtn.classList.remove('recording');
+    recStatus.textContent = '✅ Recorded ' + fmt(seconds) + '. Press play to review, or save below.';
+  }
+
+  recBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+    else startRecording();
+  });
+
+  // ── Submit ───────────────────────────────────────────
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    const note = document.getElementById('note');
+    note.textContent = '';
+    const locSel = document.getElementById('location-name');
+    if (!locSel.value) { note.textContent = '⚠️ Please choose a location.'; locSel.style.borderColor = 'var(--terra)'; return; }
+    if (mediaRecorder && mediaRecorder.state === 'recording') { note.textContent = '⚠️ Stop the recording first.'; return; }
+
+    const fd = new FormData();
+    fd.append('location', locSel.value);
+    fd.append('location_label', locSel.value === 'Other' ? document.getElementById('location-label').value.trim() : '');
+    fd.append('latitude', lat === '' ? '' : lat);
+    fd.append('longitude', lng === '' ? '' : lng);
+    fd.append('interviewer', document.getElementById('interviewer').value.trim());
+    fd.append('interviewee', document.getElementById('interviewee').value.trim());
+    fd.append('notes', document.getElementById('notes').value.trim());
+    fd.append('transcript', document.getElementById('live-transcript').value.trim());
+    if (audioBlob) {
+      const ext = (audioBlob.type.includes('mp4')) ? 'mp4' : (audioBlob.type.includes('ogg')) ? 'ogg' : 'webm';
+      fd.append('audio', audioBlob, `interview.${ext}`);
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true; note.style.color = 'var(--text-light)'; note.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/admin/interviews', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Could not save.');
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('thankyou').classList.add('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      note.style.color = 'var(--terra)'; note.textContent = '⚠️ ' + err.message;
+    } finally { btn.disabled = false; }
+  });
+
+  function resetAll() {
+    document.getElementById('thankyou').classList.remove('visible');
+    document.getElementById('form-view').style.display = '';
+    document.getElementById('location-name').value = '';
+    document.getElementById('map-picker').style.display = 'none';
+    document.getElementById('location-label').value = '';
+    document.getElementById('interviewer').value = document.getElementById('interviewer').value; // keep interviewer name
+    document.getElementById('interviewee').value = '';
+    document.getElementById('notes').value = '';
+    document.getElementById('live-transcript').value = '';
+    document.getElementById('live-wrap').style.display = 'none';
+    audioPreview.style.display = 'none'; audioPreview.src = '';
+    audioBlob = null; chunks = []; marker = null; lat = ''; lng = '';
+    if (map) { map.remove(); map = null; }
+    recTimer.textContent = '00:00'; recStatus.textContent = '';
+    recBtn.textContent = '● Start recording';
+    document.getElementById('note').textContent = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>

@@ -1,10 +1,31 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
+const multer = require('multer');
 const db = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const audioDir = db.audioDir;
+const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || '';
+
+// Store interview audio straight to disk (inside the persistent data volume) so
+// large recordings never get buffered in memory on the small server.
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, audioDir),
+    filename: (req, file, cb) => {
+      const ext = (file.mimetype && file.mimetype.includes('mp4')) ? 'mp4'
+        : (file.mimetype && file.mimetype.includes('webm')) ? 'webm'
+        : (file.mimetype && file.mimetype.includes('ogg')) ? 'ogg'
+        : 'audio';
+      cb(null, `interview_${Date.now()}_${Math.round(Math.random() * 1e6)}.${ext}`);
+    }
+  }),
+  limits: { fileSize: 60 * 1024 * 1024 } // 60 MB per recording is plenty for a field interview
+});
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) {
@@ -27,7 +48,7 @@ function requireAuth(res) {
 
 // Gate the admin dashboard, admin APIs and CSV exports behind a single password.
 // Runs before express.static so the static /admin page is protected too.
-const PROTECTED_PREFIXES = ['/admin', '/api/admin/', '/api/export/', '/eqa-assessment.html', '/api/eqa'];
+const PROTECTED_PREFIXES = ['/admin', '/api/admin/', '/api/export/', '/eqa-assessment.html', '/api/eqa', '/interview.html'];
 app.use((req, res, next) => {
   const isProtected = PROTECTED_PREFIXES.some(prefix => req.path.startsWith(prefix));
   if (!isProtected) return next();
@@ -71,6 +92,20 @@ function parseAllowed(value, allowed) {
   return num;
 }
 
+// Optional latitude/longitude from a form. Returns a valid number or null.
+function parseCoord(value, min, max) {
+  if (value === undefined || value === null || value === '') return null;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) return null;
+  return num;
+}
+
+function parseLabel(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().slice(0, 120);
+  return trimmed || null;
+}
+
 function escapeCsv(value) {
   if (value === null || value === undefined) return '';
   const text = String(value);
@@ -105,15 +140,20 @@ app.post('/api/survey', (req, res) => {
       return sendError(res, 400, 'All survey questions must be answered with a value between 1 and 5.');
     }
 
+    const locationLabel = parseLabel(req.body.location_label);
+    const latitude = parseCoord(req.body.latitude, -90, 90);
+    const longitude = parseCoord(req.body.longitude, -180, 180);
+
     const stmt = db.prepare(`
       INSERT INTO survey_responses (
-        respondent_name, attraction, is_local, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12
+        respondent_name, attraction, is_local, location_label, latitude, longitude,
+        q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `);
 
-    const info = stmt.run(respondentName || null, attraction, isLocal, ...answers);
+    const info = stmt.run(respondentName || null, attraction, isLocal, locationLabel, latitude, longitude, ...answers);
     return res.json({ success: true, id: info.lastInsertRowid });
   } catch (error) {
     return sendError(res, 500, 'Failed to save survey response.');
@@ -144,16 +184,24 @@ app.post('/api/eqa', (req, res) => {
 
     const totalScore = values.reduce((sum, value) => sum + value, 0);
 
+    const locationLabel = parseLabel(req.body.location_label);
+    const latitude = parseCoord(req.body.latitude, -90, 90);
+    const longitude = parseCoord(req.body.longitude, -180, 180);
+
     const stmt = db.prepare(`
       INSERT INTO eqa_assessments (
-        location, assess_date, assessor, lq, noise, air, litter, vandalism, transport, derelict, total_score, notes
+        location, location_label, latitude, longitude, assess_date, assessor,
+        lq, noise, air, litter, vandalism, transport, derelict, total_score, notes
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `);
 
     const info = stmt.run(
       location,
+      locationLabel,
+      latitude,
+      longitude,
       assessDate || null,
       assessor || null,
       lq,
@@ -359,6 +407,167 @@ app.delete('/api/admin/eqa', (req, res) => {
   }
 });
 
+// ─── Interviews (admin only) ─────────────────────────────────────────────
+app.post('/api/admin/interviews', upload.single('audio'), (req, res) => {
+  try {
+    const location = typeof req.body.location === 'string' ? req.body.location.trim() : '';
+    if (!location) {
+      if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) {} }
+      return sendError(res, 400, 'Location is required.');
+    }
+
+    const locationLabel = parseLabel(req.body.location_label);
+    const latitude = parseCoord(req.body.latitude, -90, 90);
+    const longitude = parseCoord(req.body.longitude, -180, 180);
+    const interviewer = typeof req.body.interviewer === 'string' ? req.body.interviewer.trim().slice(0, 80) : '';
+    const interviewee = typeof req.body.interviewee === 'string' ? req.body.interviewee.trim().slice(0, 80) : '';
+    const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
+    const liveTranscript = typeof req.body.transcript === 'string' ? req.body.transcript.trim() : '';
+    const audioFile = req.file ? req.file.filename : null;
+
+    const stmt = db.prepare(`
+      INSERT INTO interviews (
+        location, location_label, latitude, longitude, interviewer, interviewee,
+        audio_file, transcript, transcript_source, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      location,
+      locationLabel,
+      latitude,
+      longitude,
+      interviewer || null,
+      interviewee || null,
+      audioFile,
+      liveTranscript || null,
+      liveTranscript ? 'live' : null,
+      notes || null
+    );
+
+    return res.json({ success: true, id: info.lastInsertRowid });
+  } catch (error) {
+    if (req.file) { try { fs.unlinkSync(req.file.path); } catch (_) {} }
+    return sendError(res, 500, 'Failed to save interview.');
+  }
+});
+
+app.get('/api/admin/interviews', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM interviews ORDER BY submitted_at DESC, id DESC').all();
+    return res.json(rows);
+  } catch (error) {
+    return sendError(res, 500, 'Failed to load interviews.');
+  }
+});
+
+app.get('/api/admin/interviews/:id/audio', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+    const row = db.prepare('SELECT audio_file FROM interviews WHERE id = ?').get(id);
+    if (!row || !row.audio_file) return sendError(res, 404, 'No recording for this interview.');
+    // sendFile requires an absolute path; resolve in case DATA_DIR is relative.
+    const filePath = path.resolve(audioDir, row.audio_file);
+    if (!fs.existsSync(filePath)) return sendError(res, 404, 'Recording file is missing.');
+    return res.sendFile(filePath);
+  } catch (error) {
+    return sendError(res, 500, 'Failed to load recording.');
+  }
+});
+
+app.post('/api/admin/interviews/:id/transcribe', async (req, res) => {
+  try {
+    if (!DEEPGRAM_API_KEY) {
+      return sendError(res, 500, 'Transcription is not configured (DEEPGRAM_API_KEY is not set on the server).');
+    }
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+
+    const row = db.prepare('SELECT audio_file FROM interviews WHERE id = ?').get(id);
+    if (!row || !row.audio_file) return sendError(res, 404, 'No recording to transcribe.');
+    const filePath = path.join(audioDir, row.audio_file);
+    if (!fs.existsSync(filePath)) return sendError(res, 404, 'Recording file is missing.');
+
+    const audioBuffer = fs.readFileSync(filePath);
+    const dgRes = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&punctuate=true&smart_format=true', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${DEEPGRAM_API_KEY}`,
+        'Content-Type': 'application/octet-stream'
+      },
+      body: audioBuffer
+    });
+
+    if (!dgRes.ok) {
+      const detail = await dgRes.text().catch(() => '');
+      return sendError(res, 502, `Deepgram error (${dgRes.status}). ${detail.slice(0, 200)}`);
+    }
+
+    const data = await dgRes.json();
+    const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+
+    db.prepare('UPDATE interviews SET transcript = ?, transcript_source = ? WHERE id = ?')
+      .run(transcript, 'deepgram', id);
+
+    return res.json({ success: true, transcript });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to transcribe recording.');
+  }
+});
+
+app.put('/api/admin/interviews/:id/transcript', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+    const transcript = typeof req.body.transcript === 'string' ? req.body.transcript : '';
+    db.prepare('UPDATE interviews SET transcript = ?, transcript_source = ? WHERE id = ?')
+      .run(transcript, 'manual', id);
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to save transcript.');
+  }
+});
+
+app.delete('/api/admin/interviews/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+    const row = db.prepare('SELECT audio_file FROM interviews WHERE id = ?').get(id);
+    db.prepare('DELETE FROM interviews WHERE id = ?').run(id);
+    if (row && row.audio_file) {
+      try { fs.unlinkSync(path.join(audioDir, row.audio_file)); } catch (_) {}
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to delete interview.');
+  }
+});
+
+app.get('/api/export/interviews.csv', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM interviews ORDER BY submitted_at DESC, id DESC').all();
+    const csv = buildCsv(rows, [
+      { key: 'id', header: 'id' },
+      { key: 'submitted_at', header: 'submitted_at' },
+      { key: 'location', header: 'location' },
+      { key: 'location_label', header: 'location_label' },
+      { key: 'latitude', header: 'latitude' },
+      { key: 'longitude', header: 'longitude' },
+      { key: 'interviewer', header: 'interviewer' },
+      { key: 'interviewee', header: 'interviewee' },
+      { key: 'transcript', header: 'transcript' },
+      { key: 'transcript_source', header: 'transcript_source' },
+      { key: 'notes', header: 'notes' }
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="interviews.csv"');
+    return res.send(csv);
+  } catch (error) {
+    return sendError(res, 500, 'Failed to export interviews CSV.');
+  }
+});
+
 app.get('/api/export/survey.csv', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM survey_responses ORDER BY submitted_at DESC, id DESC').all();
@@ -368,6 +577,9 @@ app.get('/api/export/survey.csv', (req, res) => {
       { key: 'respondent_name', header: 'respondent_name' },
       { key: 'attraction', header: 'attraction' },
       { key: 'is_local', header: 'is_local' },
+      { key: 'location_label', header: 'location_label' },
+      { key: 'latitude', header: 'latitude' },
+      { key: 'longitude', header: 'longitude' },
       { key: 'q1', header: 'q1' },
       { key: 'q2', header: 'q2' },
       { key: 'q3', header: 'q3' },
@@ -397,6 +609,9 @@ app.get('/api/export/eqa.csv', (req, res) => {
       { key: 'id', header: 'id' },
       { key: 'submitted_at', header: 'submitted_at' },
       { key: 'location', header: 'location' },
+      { key: 'location_label', header: 'location_label' },
+      { key: 'latitude', header: 'latitude' },
+      { key: 'longitude', header: 'longitude' },
       { key: 'assess_date', header: 'assess_date' },
       { key: 'assessor', header: 'assessor' },
       { key: 'lq', header: 'lq' },
