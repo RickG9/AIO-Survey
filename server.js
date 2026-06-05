@@ -27,7 +27,7 @@ function requireAuth(res) {
 
 // Gate the admin dashboard, admin APIs and CSV exports behind a single password.
 // Runs before express.static so the static /admin page is protected too.
-const PROTECTED_PREFIXES = ['/admin', '/api/admin/', '/api/export/'];
+const PROTECTED_PREFIXES = ['/admin', '/api/admin/', '/api/export/', '/eqa-assessment.html', '/api/eqa'];
 app.use((req, res, next) => {
   const isProtected = PROTECTED_PREFIXES.some(prefix => req.path.startsWith(prefix));
   if (!isProtected) return next();

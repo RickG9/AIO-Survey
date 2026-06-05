@@ -40,7 +40,6 @@
       background: var(--cream);
       color: var(--text);
       min-height: 100vh;
-      padding-bottom: 5.5rem; /* room for sticky score */
     }
 
     .top-nav {
@@ -389,31 +388,29 @@
 
     /* ─── STICKY SCORE BAR ────────────────────────────── */
     .score-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--green);
-      color: var(--white);
-      padding: 0.85rem 1.5rem;
+      position: sticky;
+      top: 0;
+      background: var(--cream);
+      color: var(--text);
+      padding: 0.6rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 50;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.22);
+      border-bottom: 1px solid var(--cream-dark);
     }
 
     .score-label {
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      opacity: 0.75;
+      color: var(--text-mid);
     }
 
     .score-track {
       flex: 1;
       margin: 0 1rem;
       height: 6px;
-      background: rgba(255,255,255,0.2);
+      background: var(--cream-dark);
       border-radius: 100px;
       overflow: hidden;
     }
@@ -427,18 +424,11 @@
     }
 
     .score-value {
-      font-family: 'Lora', serif;
-      font-size: 1.4rem;
-      font-weight: 600;
-      min-width: 60px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      min-width: 52px;
       text-align: right;
-    }
-
-    .score-value span {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.8rem;
-      opacity: 0.6;
-      font-weight: 400;
     }
 
     /* ─── RESULT SCREEN ───────────────────────────────── */
@@ -578,7 +568,7 @@
     /* copy feedback */
     .copied-toast {
       position: fixed;
-      bottom: 5.5rem;
+      bottom: 1.5rem;
       left: 50%;
       transform: translateX(-50%) translateY(8px);
       background: var(--green);
@@ -621,11 +611,11 @@
 <body>
 
 <nav class="top-nav">
-  <a href="/rotorua-survey.html">📋 Survey</a>
+  <a href="/">🏠 Home</a>
   <span>|</span>
   <a href="/eqa-assessment.html">📊 EQA Assessment</a>
   <span>|</span>
-  <a href="/admin/">🔬 View Dashboard →</a>
+  <a href="/admin/">🔬 Dashboard →</a>
 </nav>
 
 <!-- ─── HEADER ─────────────────────────────────────── -->
@@ -639,6 +629,15 @@
   <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
 </svg>
 
+<!-- ─── STICKY SCORE BAR ──────────────────────────── -->
+<div class="score-bar" id="score-bar">
+  <span class="score-label">Penalty score</span>
+  <div class="score-track">
+    <div class="score-fill" id="bar-fill"></div>
+  </div>
+  <div class="score-value" id="bar-value">0 / 60</div>
+</div>
+
 <!-- ─── FORM VIEW ──────────────────────────────────── -->
 <div id="form-view" class="form-view">
   <div class="form-container">
@@ -648,7 +647,14 @@
       <div class="details-card">
         <div class="full-width">
           <div class="field-label">Location / Attraction Name <span style="color:var(--terra)">*</span></div>
-          <input class="field-input" type="text" id="location-name" name="location" placeholder="e.g. Wai-O-Tapu Thermal Wonderland" required>
+          <select class="field-input" id="location-name" name="location" required>
+            <option value="" selected disabled>Select a location</option>
+            <option value="Buried Maori Village">Buried Maori Village</option>
+            <option value="Agrodome">Agrodome</option>
+            <option value="Luge">Luge</option>
+            <option value="Te Puia">Te Puia</option>
+            <option value="Rotorua Ziplines">Rotorua Ziplines</option>
+          </select>
         </div>
         <div>
           <div class="field-label">Date</div>
@@ -863,15 +869,6 @@
   </div>
 </div>
 
-<!-- ─── STICKY SCORE BAR ──────────────────────────── -->
-<div class="score-bar" id="score-bar">
-  <span class="score-label">Score</span>
-  <div class="score-track">
-    <div class="score-fill" id="bar-fill"></div>
-  </div>
-  <div class="score-value" id="bar-value">0 <span>/ 60</span></div>
-</div>
-
 <!-- Toast -->
 <div class="copied-toast" id="toast">✓ Copied to clipboard</div>
 
@@ -926,7 +923,7 @@
     const score = getScore();
     const pct = (score / 60) * 100;
 
-    document.getElementById('bar-value').innerHTML = `${score} <span>/ 60</span>`;
+    document.getElementById('bar-value').textContent = `${score} / 60`;
     document.getElementById('bar-fill').style.width = pct + '%';
 
     // Color the bar by range
@@ -948,7 +945,7 @@
 
     // Check location
     const locInput = document.getElementById('location-name');
-    if (!locInput.value.trim()) {
+    if (!locInput.value) {
       locInput.style.borderColor = 'var(--terra)';
       if (!firstError) firstError = locInput;
       valid = false;
@@ -1007,7 +1004,7 @@
     }
   });
 
-  document.getElementById('location-name').addEventListener('input', function () {
+  document.getElementById('location-name').addEventListener('change', function () {
     this.style.borderColor = '';
   });
 
