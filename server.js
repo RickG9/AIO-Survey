@@ -67,6 +67,10 @@ const QUESTION_KEYS = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
 const ENV_KEYS = ['q1', 'q2', 'q3', 'q4', 'q6', 'q9'];
 const SOCIAL_KEYS = ['q5', 'q7', 'q8', 'q10', 'q11', 'q12'];
 const EQA_FEATURES = ['lq', 'noise', 'air', 'litter', 'vandalism', 'transport', 'derelict'];
+// Team members who conduct surveys, interviews, and EQA assessments.
+const TEAM_MEMBERS = ['Rick', 'Adam', 'Callum', 'Taylor'];
+const parseTeamMember = value =>
+  (typeof value === 'string' && TEAM_MEMBERS.includes(value.trim())) ? value.trim() : '';
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -124,6 +128,7 @@ function buildCsv(rows, columns) {
 app.post('/api/survey', (req, res) => {
   try {
     const respondentName = typeof req.body.respondent_name === 'string' ? req.body.respondent_name.trim().slice(0, 80) : '';
+    const interviewer = parseTeamMember(req.body.interviewer);
     const attraction = typeof req.body.attraction === 'string' ? req.body.attraction.trim() : '';
     const isLocal = req.body.is_local;
 
@@ -146,14 +151,14 @@ app.post('/api/survey', (req, res) => {
 
     const stmt = db.prepare(`
       INSERT INTO survey_responses (
-        respondent_name, attraction, is_local, location_label, latitude, longitude,
+        respondent_name, interviewer, attraction, is_local, location_label, latitude, longitude,
         q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       )
     `);
 
-    const info = stmt.run(respondentName || null, attraction, isLocal, locationLabel, latitude, longitude, ...answers);
+    const info = stmt.run(respondentName || null, interviewer || null, attraction, isLocal, locationLabel, latitude, longitude, ...answers);
     return res.json({ success: true, id: info.lastInsertRowid });
   } catch (error) {
     return sendError(res, 500, 'Failed to save survey response.');
@@ -166,7 +171,7 @@ app.post('/api/eqa', (req, res) => {
     if (!location) return sendError(res, 400, 'Location is required.');
 
     const assessDate = typeof req.body.assess_date === 'string' ? req.body.assess_date.trim() : '';
-    const assessor = typeof req.body.assessor === 'string' ? req.body.assessor.trim() : '';
+    const assessor = parseTeamMember(req.body.assessor);
     const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
 
     const lq = parseAllowed(req.body.lq, [0, 4, 8]);
@@ -419,7 +424,7 @@ app.post('/api/admin/interviews', upload.single('audio'), (req, res) => {
     const locationLabel = parseLabel(req.body.location_label);
     const latitude = parseCoord(req.body.latitude, -90, 90);
     const longitude = parseCoord(req.body.longitude, -180, 180);
-    const interviewer = typeof req.body.interviewer === 'string' ? req.body.interviewer.trim().slice(0, 80) : '';
+    const interviewer = parseTeamMember(req.body.interviewer);
     const interviewee = typeof req.body.interviewee === 'string' ? req.body.interviewee.trim().slice(0, 80) : '';
     const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
     const liveTranscript = typeof req.body.transcript === 'string' ? req.body.transcript.trim() : '';
@@ -575,6 +580,7 @@ app.get('/api/export/survey.csv', (req, res) => {
       { key: 'id', header: 'id' },
       { key: 'submitted_at', header: 'submitted_at' },
       { key: 'respondent_name', header: 'respondent_name' },
+      { key: 'interviewer', header: 'interviewer' },
       { key: 'attraction', header: 'attraction' },
       { key: 'is_local', header: 'is_local' },
       { key: 'location_label', header: 'location_label' },

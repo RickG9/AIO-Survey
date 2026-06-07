@@ -67,6 +67,20 @@
     .prompt-list li::before { content:'🎙️ '; }
     .prompt-note { font-size:0.8rem; color:var(--text-light); margin-top:0.3rem; }
 
+    /* Audience-split suggested questions */
+    .q-empty { font-size:0.9rem; color:var(--text-light); }
+    .q-group { margin-bottom:1.2rem; }
+    .q-group:last-of-type { margin-bottom:0.2rem; }
+    .q-head { display:flex; align-items:baseline; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.55rem; }
+    .q-aud { font-family:'Lora',serif; font-size:1rem; font-weight:600; color:var(--green); }
+    .q-sub { font-size:0.75rem; color:var(--text-light); }
+    /* Deep questions (owners/staff/locals) — anchored, green */
+    .prompt-list.owner li { background:var(--green-pale); border-left:3px solid var(--green-light); }
+    .prompt-list.owner li::before { content:'🧭 '; }
+    /* Quick questions (tourists/public) — lighter, warm, supporting */
+    .prompt-list.public li { background:var(--cream-dark); color:var(--text-mid); border-left:3px solid var(--terra-light); }
+    .prompt-list.public li::before { content:'💬 '; }
+
     /* Recorder */
     .rec-row { display:flex; align-items:center; gap:0.9rem; flex-wrap:wrap; }
     .rec-btn {
@@ -145,7 +159,13 @@
     <div class="row2" style="margin-top:0.9rem;">
       <div>
         <div class="field-label">Interviewer (you)</div>
-        <input class="field-input" type="text" id="interviewer" placeholder="Your name" maxlength="80">
+        <select class="field-input" id="interviewer">
+          <option value="" selected disabled>Select…</option>
+          <option value="Rick">Rick</option>
+          <option value="Adam">Adam</option>
+          <option value="Callum">Callum</option>
+          <option value="Taylor">Taylor</option>
+        </select>
       </div>
       <div>
         <div class="field-label">Interviewee (optional)</div>
@@ -155,15 +175,28 @@
   </div>
 
   <p class="section-title">Suggested Questions</p>
-  <div class="card">
-    <ul class="prompt-list">
-      <li>How do you think tourism here affects the local environment?</li>
-      <li>Have you noticed litter, noise, or crowding because of visitors?</li>
-      <li>Do you feel tourism benefits the local community? In what way?</li>
-      <li>Is Māori culture represented respectfully here?</li>
-      <li>What would make tourism in Rotorua more sustainable?</li>
-    </ul>
-    <p class="prompt-note">These are prompts — ask in your own words and follow up naturally.</p>
+  <div class="card" id="questions-card">
+    <p class="q-empty" id="questions-empty">👆 Pick a location above and tailored questions appear here — deeper ones for owners &amp; staff, quick ones for tourists.</p>
+
+    <div id="questions-content" style="display:none;">
+      <div class="q-group">
+        <div class="q-head">
+          <span class="q-aud">🏢 Business owners &amp; staff</span>
+          <span class="q-sub">In-depth · your core evidence</span>
+        </div>
+        <ul class="prompt-list owner" id="q-owner"></ul>
+      </div>
+
+      <div class="q-group">
+        <div class="q-head">
+          <span class="q-aud">🧳 Tourists &amp; public</span>
+          <span class="q-sub">Quick &amp; easy · supporting voices</span>
+        </div>
+        <ul class="prompt-list public" id="q-public"></ul>
+      </div>
+    </div>
+
+    <p class="prompt-note">These are prompts — ask in your own words and follow up naturally. Keep tourist questions short; save the heavy ones for owners, staff, and locals.</p>
   </div>
 
   <p class="section-title">Record</p>
@@ -214,6 +247,125 @@
   };
   const ROTORUA_CENTER = [-38.137, 176.249];
 
+  // ── Location-tailored question banks ─────────────────
+  // Each location has DEEP questions (for owners / staff / long-time locals)
+  // and QUICK ones (for tourists & the public — short, used as supporting evidence).
+  const QUESTION_SETS = {
+    'Buried Maori Village': {
+      owner: [
+        "How do you balance preserving the archaeological site with the foot traffic tourism brings?",
+        "Is the Tūhourangi story being honoured in how this site is presented and run?",
+        "Have visitor numbers worsened erosion on the trails or around the waterfall?",
+        "How is visitor revenue reinvested into protecting and excavating the site?",
+        "What's the biggest long-term threat tourism poses to this heritage landscape?"
+      ],
+      public: [
+        "What surprised you about the buried village?",
+        "Did the trails feel well looked after?",
+        "Was the Māori history told respectfully?",
+        "Was anywhere too crowded to enjoy?",
+        "Did it make you want to protect heritage sites?"
+      ]
+    },
+    'Agrodome': {
+      owner: [
+        "How do you manage the environmental footprint of livestock alongside running farm tours?",
+        "Has tourism pushed you toward more sustainable farming, or added pressure on the land?",
+        "How do you meet international visitors' animal-welfare expectations?",
+        "How is effluent and water managed so it doesn't reach the lakes?",
+        "Is agri-tourism a more sustainable income than farming alone?"
+      ],
+      public: [
+        "Did the farm look clean and cared for?",
+        "Did the animals seem well treated?",
+        "Did you learn anything about NZ farming?",
+        "Was it good value for money?",
+        "Did anything seem wasteful or unsustainable?"
+      ]
+    },
+    'Luge': {
+      owner: [
+        "How do you limit the impact of the tracks and gondola on the forest and the maunga?",
+        "Mount Ngongotahā is culturally significant — how is that recognised in how you operate?",
+        "What's your energy use like for the gondola and lighting, and is any of it renewable?",
+        "How do you control erosion and run-off from the luge tracks into the catchment?",
+        "As visitor numbers grow, what's the plan to keep the mountain healthy?"
+      ],
+      public: [
+        "Did the forest around the tracks look healthy?",
+        "Did the top feel overcrowded?",
+        "Were there enough bins and recycling around?",
+        "Was it good value for money?",
+        "Did it feel respectful of the natural setting?"
+      ]
+    },
+    'Te Puia': {
+      owner: [
+        "How do you protect the geothermal features from the pressure of big visitor numbers?",
+        "How does tourism revenue sustain the carving and weaving school here?",
+        "How is the kiwi conservation programme funded and affected by tourism?",
+        "Where's the line between sharing Māori culture and commodifying it, and how do you hold it?",
+        "What environmental or geothermal change have you seen over the years that worries you?"
+      ],
+      public: [
+        "What did you think of the geysers and geothermal area?",
+        "Did the cultural performance feel genuine?",
+        "Was the site clean and well managed?",
+        "Was the price fair for the experience?",
+        "Did it make you value protecting these natural features?"
+      ]
+    },
+    'Rotorua Ziplines': {
+      owner: [
+        "How does the ziplining operation fund the pest control and forest restoration here?",
+        "What changes in native birdlife or forest health have you measured since starting?",
+        "How do you keep the platforms and lines low-impact on the canopy and forest floor?",
+        "Is the conservation-through-tourism model financially sustainable long term?",
+        "What would happen to this forest if the tourism stopped tomorrow?"
+      ],
+      public: [
+        "Did the forest feel alive — birds, greenery, healthy trees?",
+        "Did you learn how your ticket helps conservation?",
+        "Did the guides talk about protecting the forest?",
+        "Was it worth the price?",
+        "Do you care more about native forests after this?"
+      ]
+    },
+    // Fallback for "Other / elsewhere in Rotorua" and anything unmatched.
+    default: {
+      owner: [
+        "How has tourism changed the local environment over the years you've been here?",
+        "What sustainability practices have you put in place, and what did they cost you?",
+        "Where's the biggest tension between more visitors and protecting this place?",
+        "How does tourism here support or strain the community and Māori interests?",
+        "What would genuine long-term sustainable tourism look like for Rotorua?"
+      ],
+      public: [
+        "How does this place feel — busy, peaceful, crowded?",
+        "Did anything here make you think about the environment?",
+        "Noticed any litter, noise, or crowding today?",
+        "Was the price fair?",
+        "Did the visit respect local culture?"
+      ]
+    }
+  };
+
+  function renderQuestions(location) {
+    const empty = document.getElementById('questions-empty');
+    const content = document.getElementById('questions-content');
+    if (!location) {
+      content.style.display = 'none';
+      empty.style.display = '';
+      return;
+    }
+    const set = QUESTION_SETS[location] || QUESTION_SETS.default;
+    const toItems = arr => arr.map(q => `<li>${q}</li>`).join('');
+    document.getElementById('q-owner').innerHTML = toItems(set.owner);
+    document.getElementById('q-public').innerHTML = toItems(set.public);
+    empty.style.display = 'none';
+    content.style.display = 'block';
+  }
+
   let map = null, marker = null;
   let lat = '', lng = '';
 
@@ -238,6 +390,7 @@
 
   document.getElementById('location-name').addEventListener('change', function () {
     this.style.borderColor = '';
+    renderQuestions(this.value);
     const picker = document.getElementById('map-picker');
     if (this.value === 'Other') {
       picker.style.display = 'block';
@@ -369,6 +522,7 @@
     document.getElementById('thankyou').classList.remove('visible');
     document.getElementById('form-view').style.display = '';
     document.getElementById('location-name').value = '';
+    renderQuestions('');
     document.getElementById('map-picker').style.display = 'none';
     document.getElementById('location-label').value = '';
     document.getElementById('interviewer').value = document.getElementById('interviewer').value; // keep interviewer name

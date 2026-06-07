@@ -499,6 +499,17 @@
       <!-- About You -->
       <p class="section-title">About You</p>
 
+      <div class="card" id="card-interviewer">
+        <p class="card-label">Interviewer <span class="required-star">*</span></p>
+        <select class="select-input" name="interviewer" id="interviewer" required>
+          <option value="" selected disabled>Who is conducting this survey?</option>
+          <option value="Rick">Rick</option>
+          <option value="Adam">Adam</option>
+          <option value="Callum">Callum</option>
+          <option value="Taylor">Taylor</option>
+        </select>
+      </div>
+
       <div class="card" id="card-name">
         <p class="card-label">Your name <span style="color:var(--text-light);font-size:0.82rem;font-weight:400;">(optional)</span></p>
         <input class="select-input" type="text" name="respondent_name" id="respondent-name" placeholder="First name or nickname" autocomplete="given-name" maxlength="80">
@@ -745,6 +756,13 @@
     document.getElementById('progress-text').textContent = `${answered} of ${TOTAL} answered`;
   }
 
+  // ── Interviewer select state ───────────────────────
+  document.getElementById('interviewer').addEventListener('change', (e) => {
+    const card = document.getElementById('card-interviewer');
+    if (e.target.value) card.classList.add('answered');
+    card.classList.remove('error');
+  });
+
   // ── Attraction select state ────────────────────────
   const attractionSelect = document.getElementById('attraction');
   const locationLabelInput = document.getElementById('location-label');
@@ -788,6 +806,14 @@
     const note = document.getElementById('unanswered-note');
     note.textContent = '';
 
+    // Validate interviewer
+    const interviewerCard = document.getElementById('card-interviewer');
+    if (!document.getElementById('interviewer').value) {
+      interviewerCard.classList.add('error');
+      if (!firstError) firstError = interviewerCard;
+      allValid = false;
+    }
+
     // Validate attraction
     const attractionCard = document.getElementById('card-attraction');
     if (!attractionSelect.value) {
@@ -822,6 +848,7 @@
 
     const payload = {
       respondent_name: document.getElementById('respondent-name').value.trim(),
+      interviewer: document.getElementById('interviewer').value,
       attraction: attractionSelect.value,
       location_label: attractionSelect.value === 'Other' ? locationLabelInput.value.trim() : '',
       is_local: document.querySelector('input[name="local"]:checked').value

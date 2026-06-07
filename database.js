@@ -18,6 +18,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     submitted_at TEXT DEFAULT (datetime('now')),
     respondent_name TEXT,
+    interviewer TEXT,
     attraction TEXT,
     is_local TEXT,
     location_label TEXT,
@@ -77,6 +78,7 @@ db.exec(`
 // Each is wrapped individually so an already-applied migration is a no-op.
 const migrations = [
   `ALTER TABLE survey_responses ADD COLUMN respondent_name TEXT`,
+  `ALTER TABLE survey_responses ADD COLUMN interviewer TEXT`,
   `ALTER TABLE survey_responses ADD COLUMN location_label TEXT`,
   `ALTER TABLE survey_responses ADD COLUMN latitude REAL`,
   `ALTER TABLE survey_responses ADD COLUMN longitude REAL`,

@@ -564,6 +564,7 @@
               <tr>
                 <th>Date</th>
                 <th>Name</th>
+                <th>Interviewer</th>
                 <th>Attraction</th>
                 <th>Local?</th>
                 <th>Q1</th>
@@ -601,8 +602,12 @@
           <div class="stat-value" id="eqa-total">0</div>
         </div>
         <div class="card stat-card">
-          <h3>Average Total Score</h3>
+          <h3>Average Environmental Quality</h3>
           <div class="stat-value" id="eqa-avg">0.0 / 60</div>
+          <div class="stat-sub" id="eqa-avg-band" style="font-weight:700;">—</div>
+          <div class="stat-sub" style="color:#7a9a6a;font-size:0.74rem;margin-top:0.15rem;">
+            Penalty score — <strong>lower is better</strong>. 0 = pristine, 60 = severely degraded.
+          </div>
         </div>
         <div class="card stat-card">
           <h3>Worst Performing Feature</h3>
@@ -1052,7 +1057,7 @@
     function renderSurveyTable(rows) {
       const tbody = document.getElementById('survey-table');
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="19">No survey responses yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="20">No survey responses yet.</td></tr>';
         return;
       }
 
@@ -1070,6 +1075,7 @@
           <tr>
             <td>${date}</td>
             <td>${row.respondent_name || ''}</td>
+            <td>${row.interviewer || ''}</td>
             <td>${row.attraction || ''}</td>
             <td>${row.is_local || ''}</td>
             <td>${row.q1 || ''}</td>
@@ -1100,7 +1106,17 @@
 
     function renderEqaStats(eqa) {
       setText('eqa-total', eqa.total_assessments || 0);
-      setText('eqa-avg', `${(eqa.avg_total_score || 0).toFixed(1)} / 60`);
+
+      const hasAssessments = (eqa.total_assessments || 0) > 0;
+      const avgScore = eqa.avg_total_score || 0;
+      setText('eqa-avg', `${avgScore.toFixed(1)} / 60`);
+
+      const band = eqaBand(hasAssessments ? avgScore : null);
+      const bandEl = document.getElementById('eqa-avg-band');
+      if (bandEl) {
+        bandEl.textContent = band.label;
+        bandEl.style.color = band.color;
+      }
 
       const avgPerFeature = eqa.avg_per_feature || {};
       let worst = { key: null, value: -1 };
@@ -1299,6 +1315,15 @@
     }
 
     // ─── Interviews ──────────────────────────────────────
+    // EQA is a penalty score (lower = cleaner). Map a score to its quality band.
+    function eqaBand(score) {
+      if (score == null) return { label: 'No data', color: '#7a9a6a' };
+      if (score <= 15) return { label: 'Good environmental quality', color: '#2e6620' };
+      if (score <= 30) return { label: 'Moderate environmental quality', color: '#7a5800' };
+      if (score <= 45) return { label: 'Poor environmental quality', color: '#a04010' };
+      return { label: 'Very poor environmental quality', color: '#8a2010' };
+    }
+
     function eqaColor(score) {
       if (score == null) return '#7a9a6a';
       if (score <= 15) return '#5a9c3e';
