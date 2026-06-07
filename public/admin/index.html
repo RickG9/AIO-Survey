@@ -411,8 +411,34 @@
     }
     .mini-btn:hover { background: #c4e0bb; }
     .mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .transcript-cell { max-width: 280px; white-space: pre-wrap; font-size: 0.82rem; color: #3d5c30; }
-    .src-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: #7a9a6a; }
+    .transcript-cell { min-width: 260px; max-width: 380px; white-space: normal; font-size: 0.82rem; color: #3d5c30; }
+    .transcript-preview {
+      white-space: pre-wrap; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .src-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: #7a9a6a; margin-top: 0.3rem; }
+
+    /* ─── TRANSCRIPT MODAL ─────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(30, 40, 20, 0.55);
+      display: none; align-items: center; justify-content: center; z-index: 2000; padding: 1.5rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      background: var(--white, #fff); border-radius: 14px; width: 100%; max-width: 760px;
+      max-height: 84vh; display: flex; flex-direction: column; box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1rem 1.4rem; border-bottom: 1px solid var(--cream-dark);
+    }
+    .modal-head h4 { margin: 0; font-size: 0.95rem; color: #3d5c30; }
+    .modal-close { border: none; background: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: #7a9a6a; }
+    .modal-close:hover { color: #3d5c30; }
+    .modal-body {
+      padding: 1.3rem 1.5rem; overflow-y: auto; white-space: pre-wrap;
+      line-height: 1.65; font-size: 0.95rem; color: #3d5c30;
+    }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -701,6 +727,16 @@
       </div>
     </section>
   </main>
+
+  <div class="modal-overlay" id="transcript-modal" onclick="if(event.target===this)closeTranscriptModal()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="transcript-modal-title">
+      <div class="modal-head">
+        <h4 id="transcript-modal-title">Transcript</h4>
+        <button class="modal-close" onclick="closeTranscriptModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="transcript-modal-body"></div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
@@ -1295,8 +1331,11 @@
         const audio = row.audio_file
           ? `<audio controls preload="none" style="width:150px" src="/api/admin/interviews/${row.id}/audio"></audio>`
           : '<span style="color:#7a9a6a">no audio</span>';
-        const transcript = row.transcript ? escapeHtml(row.transcript) : '<em style="color:#7a9a6a">none yet</em>';
         const src = row.transcript_source ? `<div class="src-tag">${escapeHtml(row.transcript_source)}</div>` : '';
+        const transcript = (row.transcript && row.transcript.trim())
+          ? `<div class="transcript-preview">${escapeHtml(row.transcript)}</div>
+             <button class="mini-btn" style="margin-top:0.45rem" onclick="viewTranscript(${row.id})">Read full ↗</button>`
+          : '<em style="color:#7a9a6a">none yet</em>';
         return `
           <tr>
             <td>${date}</td>
@@ -1328,6 +1367,27 @@
         if (btn) { btn.disabled = false; btn.textContent = 'Transcribe'; }
       }
     }
+
+    function viewTranscript(id) {
+      const row = state.interviewRows.find(r => r.id === id);
+      if (!row) return;
+      const meta = [
+        row.submitted_at ? row.submitted_at.split(' ')[0] : '',
+        row.interviewee,
+        row.location === 'Other' && row.location_label ? `Other — ${row.location_label}` : row.location
+      ].filter(Boolean).join(' · ');
+      document.getElementById('transcript-modal-title').textContent = meta || 'Transcript';
+      document.getElementById('transcript-modal-body').textContent = row.transcript || '';
+      document.getElementById('transcript-modal').classList.add('open');
+    }
+
+    function closeTranscriptModal() {
+      document.getElementById('transcript-modal').classList.remove('open');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeTranscriptModal();
+    });
 
     async function editTranscript(id) {
       const row = state.interviewRows.find(r => r.id === id);
