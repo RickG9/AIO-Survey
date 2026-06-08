@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 
 const audioDir = db.audioDir;
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+// Free-tier friendly default; override with SUMMARY_MODEL if your key has quota elsewhere.
+const SUMMARY_MODEL = process.env.SUMMARY_MODEL || 'gemini-2.5-flash';
 
 // Store interview audio straight to disk (inside the persistent data volume) so
 // large recordings never get buffered in memory on the small server.
@@ -72,6 +75,43 @@ const TEAM_MEMBERS = ['Rick', 'Adam', 'Callum', 'Taylor'];
 const parseTeamMember = value =>
   (typeof value === 'string' && TEAM_MEMBERS.includes(value.trim())) ? value.trim() : '';
 
+// ─── AI interview/speech summary (Google Gemini) ─────────────────────────
+const HYPOTHESIS = 'Tourism in Rotorua is (socially and environmentally) sustainable.';
+const SUMMARY_SYSTEM = [
+  'You are a research assistant for a Sacred Heart College (Auckland) geography study.',
+  `The study tests this hypothesis: "${HYPOTHESIS}"`,
+  'You will be given the transcript of a field interview or a recorded speech about tourism in Rotorua.',
+  'Do two things:',
+  '1. Write a concise, plain-language summary (2-4 sentences) of what was said.',
+  '2. Extract the key points the speaker made. For each point, decide its stance toward the',
+  '   hypothesis ("supports", "contradicts", or "neutral") and which dimension it concerns',
+  '   ("social", "environmental", or "general").',
+  'Base everything only on the transcript — do not invent details. If a point is unclear or not',
+  'about sustainability, mark it "neutral". Keep each point to one short sentence.'
+].join('\n');
+// Gemini structured-output schema (OpenAPI subset; Schema `type` values are UPPERCASE).
+const SUMMARY_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    summary: { type: 'STRING' },
+    points: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          point: { type: 'STRING' },
+          stance: { type: 'STRING', enum: ['supports', 'contradicts', 'neutral'] },
+          dimension: { type: 'STRING', enum: ['social', 'environmental', 'general'] }
+        },
+        required: ['point', 'stance', 'dimension'],
+        propertyOrdering: ['point', 'stance', 'dimension']
+      }
+    }
+  },
+  required: ['summary', 'points'],
+  propertyOrdering: ['summary', 'points']
+};
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -125,29 +165,44 @@ function buildCsv(rows, columns) {
   return [header, ...lines].join('\n');
 }
 
+// Validate a survey payload (shared by create + edit). Returns { values } or { error }.
+function parseSurveyBody(body) {
+  const respondentName = typeof body.respondent_name === 'string' ? body.respondent_name.trim().slice(0, 80) : '';
+  const interviewer = parseTeamMember(body.interviewer);
+  const attraction = typeof body.attraction === 'string' ? body.attraction.trim() : '';
+  const isLocal = body.is_local;
+
+  if (!attraction) return { error: 'Attraction is required.' };
+  if (isLocal !== 'yes' && isLocal !== 'no') return { error: 'Local status is invalid.' };
+
+  const answers = QUESTION_KEYS.map(key => {
+    const value = parseIntStrict(body[key]);
+    if (value === null || value < 1 || value > 5) return null;
+    return value;
+  });
+  if (answers.some(value => value === null)) {
+    return { error: 'All survey questions must be answered with a value between 1 and 5.' };
+  }
+
+  return {
+    values: {
+      respondentName,
+      interviewer,
+      attraction,
+      isLocal,
+      locationLabel: parseLabel(body.location_label),
+      latitude: parseCoord(body.latitude, -90, 90),
+      longitude: parseCoord(body.longitude, -180, 180),
+      answers
+    }
+  };
+}
+
 app.post('/api/survey', (req, res) => {
   try {
-    const respondentName = typeof req.body.respondent_name === 'string' ? req.body.respondent_name.trim().slice(0, 80) : '';
-    const interviewer = parseTeamMember(req.body.interviewer);
-    const attraction = typeof req.body.attraction === 'string' ? req.body.attraction.trim() : '';
-    const isLocal = req.body.is_local;
-
-    if (!attraction) return sendError(res, 400, 'Attraction is required.');
-    if (isLocal !== 'yes' && isLocal !== 'no') return sendError(res, 400, 'Local status is invalid.');
-
-    const answers = QUESTION_KEYS.map(key => {
-      const value = parseIntStrict(req.body[key]);
-      if (value === null || value < 1 || value > 5) return null;
-      return value;
-    });
-
-    if (answers.some(value => value === null)) {
-      return sendError(res, 400, 'All survey questions must be answered with a value between 1 and 5.');
-    }
-
-    const locationLabel = parseLabel(req.body.location_label);
-    const latitude = parseCoord(req.body.latitude, -90, 90);
-    const longitude = parseCoord(req.body.longitude, -180, 180);
+    const parsed = parseSurveyBody(req.body);
+    if (parsed.error) return sendError(res, 400, parsed.error);
+    const v = parsed.values;
 
     const stmt = db.prepare(`
       INSERT INTO survey_responses (
@@ -158,40 +213,54 @@ app.post('/api/survey', (req, res) => {
       )
     `);
 
-    const info = stmt.run(respondentName || null, interviewer || null, attraction, isLocal, locationLabel, latitude, longitude, ...answers);
+    const info = stmt.run(
+      v.respondentName || null, v.interviewer || null, v.attraction, v.isLocal,
+      v.locationLabel, v.latitude, v.longitude, ...v.answers
+    );
     return res.json({ success: true, id: info.lastInsertRowid });
   } catch (error) {
     return sendError(res, 500, 'Failed to save survey response.');
   }
 });
 
+// Validate an EQA payload (shared by create + edit). Returns { values } or { error }.
+function parseEqaBody(body) {
+  const location = typeof body.location === 'string' ? body.location.trim() : '';
+  if (!location) return { error: 'Location is required.' };
+
+  const lq = parseAllowed(body.lq, [0, 4, 8]);
+  const noise = parseAllowed(body.noise, [0, 4, 8]);
+  const air = parseAllowed(body.air, [0, 10]);
+  const litter = parseAllowed(body.litter, [0, 4, 8]);
+  const vandalism = parseAllowed(body.vandalism, [0, 4, 8]);
+  const transport = parseAllowed(body.transport, [0, 4, 8]);
+  const derelict = parseAllowed(body.derelict, [0, 4, 10]);
+
+  const scores = [lq, noise, air, litter, vandalism, transport, derelict];
+  if (scores.some(value => value === null)) {
+    return { error: 'All EQA feature scores must be selected.' };
+  }
+
+  return {
+    values: {
+      location,
+      locationLabel: parseLabel(body.location_label),
+      latitude: parseCoord(body.latitude, -90, 90),
+      longitude: parseCoord(body.longitude, -180, 180),
+      assessDate: typeof body.assess_date === 'string' ? body.assess_date.trim() : '',
+      assessor: parseTeamMember(body.assessor),
+      lq, noise, air, litter, vandalism, transport, derelict,
+      totalScore: scores.reduce((sum, value) => sum + value, 0),
+      notes: typeof body.notes === 'string' ? body.notes.trim() : ''
+    }
+  };
+}
+
 app.post('/api/eqa', (req, res) => {
   try {
-    const location = typeof req.body.location === 'string' ? req.body.location.trim() : '';
-    if (!location) return sendError(res, 400, 'Location is required.');
-
-    const assessDate = typeof req.body.assess_date === 'string' ? req.body.assess_date.trim() : '';
-    const assessor = parseTeamMember(req.body.assessor);
-    const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
-
-    const lq = parseAllowed(req.body.lq, [0, 4, 8]);
-    const noise = parseAllowed(req.body.noise, [0, 4, 8]);
-    const air = parseAllowed(req.body.air, [0, 10]);
-    const litter = parseAllowed(req.body.litter, [0, 4, 8]);
-    const vandalism = parseAllowed(req.body.vandalism, [0, 4, 8]);
-    const transport = parseAllowed(req.body.transport, [0, 4, 8]);
-    const derelict = parseAllowed(req.body.derelict, [0, 4, 10]);
-
-    const values = [lq, noise, air, litter, vandalism, transport, derelict];
-    if (values.some(value => value === null)) {
-      return sendError(res, 400, 'All EQA feature scores must be selected.');
-    }
-
-    const totalScore = values.reduce((sum, value) => sum + value, 0);
-
-    const locationLabel = parseLabel(req.body.location_label);
-    const latitude = parseCoord(req.body.latitude, -90, 90);
-    const longitude = parseCoord(req.body.longitude, -180, 180);
+    const parsed = parseEqaBody(req.body);
+    if (parsed.error) return sendError(res, 400, parsed.error);
+    const v = parsed.values;
 
     const stmt = db.prepare(`
       INSERT INTO eqa_assessments (
@@ -203,21 +272,8 @@ app.post('/api/eqa', (req, res) => {
     `);
 
     const info = stmt.run(
-      location,
-      locationLabel,
-      latitude,
-      longitude,
-      assessDate || null,
-      assessor || null,
-      lq,
-      noise,
-      air,
-      litter,
-      vandalism,
-      transport,
-      derelict,
-      totalScore,
-      notes || null
+      v.location, v.locationLabel, v.latitude, v.longitude, v.assessDate || null, v.assessor || null,
+      v.lq, v.noise, v.air, v.litter, v.vandalism, v.transport, v.derelict, v.totalScore, v.notes || null
     );
 
     return res.json({ success: true, id: info.lastInsertRowid });
@@ -372,6 +428,33 @@ app.get('/api/admin/stats', (req, res) => {
   }
 });
 
+app.put('/api/admin/survey/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+
+    const parsed = parseSurveyBody(req.body);
+    if (parsed.error) return sendError(res, 400, parsed.error);
+    const v = parsed.values;
+
+    const result = db.prepare(`
+      UPDATE survey_responses SET
+        respondent_name = ?, interviewer = ?, attraction = ?, is_local = ?,
+        location_label = ?, latitude = ?, longitude = ?,
+        q1 = ?, q2 = ?, q3 = ?, q4 = ?, q5 = ?, q6 = ?, q7 = ?, q8 = ?, q9 = ?, q10 = ?, q11 = ?, q12 = ?
+      WHERE id = ?
+    `).run(
+      v.respondentName || null, v.interviewer || null, v.attraction, v.isLocal,
+      v.locationLabel, v.latitude, v.longitude, ...v.answers, id
+    );
+
+    if (result.changes === 0) return sendError(res, 404, 'Survey response not found.');
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to update survey response.');
+  }
+});
+
 app.delete('/api/admin/survey/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -380,6 +463,33 @@ app.delete('/api/admin/survey/:id', (req, res) => {
     return res.json({ success: true });
   } catch (error) {
     return sendError(res, 500, 'Failed to delete survey response.');
+  }
+});
+
+app.put('/api/admin/eqa/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+
+    const parsed = parseEqaBody(req.body);
+    if (parsed.error) return sendError(res, 400, parsed.error);
+    const v = parsed.values;
+
+    const result = db.prepare(`
+      UPDATE eqa_assessments SET
+        location = ?, location_label = ?, latitude = ?, longitude = ?, assess_date = ?, assessor = ?,
+        lq = ?, noise = ?, air = ?, litter = ?, vandalism = ?, transport = ?, derelict = ?, total_score = ?, notes = ?
+      WHERE id = ?
+    `).run(
+      v.location, v.locationLabel, v.latitude, v.longitude, v.assessDate || null, v.assessor || null,
+      v.lq, v.noise, v.air, v.litter, v.vandalism, v.transport, v.derelict, v.totalScore, v.notes || null,
+      id
+    );
+
+    if (result.changes === 0) return sendError(res, 404, 'EQA assessment not found.');
+    return res.json({ success: true });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to update EQA assessment.');
   }
 });
 
@@ -518,6 +628,70 @@ app.post('/api/admin/interviews/:id/transcribe', async (req, res) => {
     return res.json({ success: true, transcript });
   } catch (error) {
     return sendError(res, 500, 'Failed to transcribe recording.');
+  }
+});
+
+// Summarise an interview transcript and classify each point against the hypothesis.
+app.post('/api/admin/interviews/:id/summarize', async (req, res) => {
+  try {
+    if (!GEMINI_API_KEY) {
+      return sendError(res, 500, 'Summaries are not configured (GEMINI_API_KEY is not set on the server).');
+    }
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id)) return sendError(res, 400, 'Invalid ID.');
+
+    const row = db.prepare('SELECT transcript FROM interviews WHERE id = ?').get(id);
+    if (!row) return sendError(res, 404, 'Interview not found.');
+    const transcript = (row.transcript || '').trim();
+    if (!transcript) return sendError(res, 400, 'Add or generate a transcript before summarising.');
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(SUMMARY_MODEL)}:generateContent`;
+    const gemRes = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SUMMARY_SYSTEM }] },
+        contents: [{ role: 'user', parts: [{ text: transcript }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: SUMMARY_SCHEMA,
+          temperature: 0.2,
+          maxOutputTokens: 2048
+        }
+      })
+    });
+
+    if (!gemRes.ok) {
+      const detail = await gemRes.text().catch(() => '');
+      let message = detail.slice(0, 300);
+      try { message = JSON.parse(detail).error.message || message; } catch (_) {}
+      return sendError(res, 502, `Gemini error (${gemRes.status}). ${message}`);
+    }
+
+    const data = await gemRes.json();
+    const candidate = data && data.candidates && data.candidates[0];
+    const finish = candidate && candidate.finishReason;
+    if (finish && finish !== 'STOP' && finish !== 'MAX_TOKENS') {
+      return sendError(res, 502, `Gemini stopped early (${finish}). Try again or shorten the transcript.`);
+    }
+    const text = (candidate && candidate.content && Array.isArray(candidate.content.parts))
+      ? candidate.content.parts.map(p => p.text || '').join('')
+      : '';
+
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (_) {
+      return sendError(res, 502, 'Gemini did not return valid JSON. Please try again.');
+    }
+    if (!parsed || typeof parsed.summary !== 'string' || !Array.isArray(parsed.points)) {
+      return sendError(res, 502, 'Gemini returned an unexpected shape. Please try again.');
+    }
+
+    db.prepare("UPDATE interviews SET summary = ?, summary_updated_at = datetime('now'), summary_model = ? WHERE id = ?")
+      .run(JSON.stringify(parsed), SUMMARY_MODEL, id);
+
+    return res.json({ success: true, summary: parsed });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to summarise interview.');
   }
 });
 

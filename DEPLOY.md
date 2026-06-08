@@ -13,6 +13,15 @@ so they persist exactly like the survey data. Transcription is optional and uses
 **Deepgram**: set a `DEEPGRAM_API_KEY` to enable the "Generate transcript" button
 in the dashboard. Without it, recording still works — you just can't auto-transcribe.
 
+AI interview **summaries** are also optional and use **Google Gemini** (free tier):
+set a `GEMINI_API_KEY` to enable the "Summarize" button, which turns a transcript
+into a short summary plus bullet points classified as supporting / contradicting the
+hypothesis. Get a free key at <https://aistudio.google.com/app/apikey>. Without the
+key everything else works — the button just reports it's not configured. Override the
+model with `SUMMARY_MODEL` (default `gemini-2.5-flash`). **Privacy note:** Gemini's
+*free* tier may use submitted text to improve Google's models, so weigh that before
+sending real interview transcripts (a paid API tier avoids this).
+
 ---
 
 ## Option A — Docker (recommended)
@@ -38,6 +47,8 @@ cd AIO-Survey
 printf 'ADMIN_PASSWORD=choose-a-strong-password\n' > .env
 # Optional: enable interview transcription
 printf 'DEEPGRAM_API_KEY=your-deepgram-key\n' >> .env
+# Optional: enable AI interview summaries (free Google Gemini key)
+printf 'GEMINI_API_KEY=your-gemini-key\n' >> .env
 ```
 
 ### 4. Build and run

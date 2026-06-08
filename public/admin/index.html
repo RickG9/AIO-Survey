@@ -439,6 +439,63 @@
       padding: 1.3rem 1.5rem; overflow-y: auto; white-space: pre-wrap;
       line-height: 1.65; font-size: 0.95rem; color: #3d5c30;
     }
+
+    /* ─── EDIT FORM MODAL ──────────────────────────────── */
+    .modal-body-form { padding: 1.3rem 1.5rem; overflow-y: auto; }
+    .modal-foot {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.9rem 1.4rem; border-top: 1px solid var(--cream-dark);
+    }
+    .ef-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.85rem 1rem; }
+    .ef-field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+    .ef-field.full { grid-column: 1 / -1; }
+    .ef-field label {
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #7a9a6a;
+    }
+    .ef-input {
+      width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--cream-dark);
+      border-radius: 8px; font-family: inherit; font-size: 0.88rem;
+      background: var(--cream); color: #1c2d16;
+    }
+    .ef-input:focus { outline: none; border-color: var(--green-light); }
+    textarea.ef-input { resize: vertical; min-height: 64px; }
+    .ef-section {
+      grid-column: 1 / -1; font-family: 'Lora', serif; font-size: 0.92rem;
+      color: var(--green); margin: 0.9rem 0 0.1rem; padding-top: 0.6rem;
+      border-top: 1px solid var(--cream-dark);
+    }
+    .ef-total-line { grid-column: 1 / -1; font-size: 0.9rem; color: #3d5c30; }
+    .ef-total { font-family: 'Lora', serif; font-weight: 600; font-size: 1.1rem; color: var(--green); }
+    .edit-error { color: var(--terra); font-size: 0.82rem; font-weight: 600; }
+    .mini-btn.primary { background: var(--green-mid); color: var(--white); }
+    .mini-btn.primary:hover { background: var(--green); }
+    .mini-btn.ghost { background: transparent; color: #3d5c30; border: 1px solid var(--cream-dark); }
+    .mini-btn.ghost:hover { background: var(--cream-dark); }
+
+    /* ─── AI SUMMARY MODAL ─────────────────────────────── */
+    .summary-meta { font-size: 0.82rem; color: #7a9a6a; margin-bottom: 0.6rem; }
+    .summary-overview { font-size: 0.95rem; line-height: 1.6; color: #1c2d16; margin-bottom: 0.9rem; }
+    .summary-counts { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+    .summary-group { margin-bottom: 1.1rem; }
+    .summary-group h5 {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 0.5rem; padding-left: 0.5rem; border-left: 3px solid var(--cream-dark); color: #3d5c30;
+    }
+    .summary-group.supports h5 { border-left-color: var(--green-light); color: var(--green-mid); }
+    .summary-group.contradicts h5 { border-left-color: var(--terra); color: var(--terra); }
+    .summary-group.neutral h5 { border-left-color: var(--amber); color: var(--amber); }
+    .summary-point {
+      display: flex; gap: 0.55rem; align-items: baseline; padding: 0.45rem 0.6rem;
+      border: 1px solid var(--cream-dark); border-radius: 8px; margin-bottom: 0.45rem; background: var(--cream);
+    }
+    .summary-point .dim-tag {
+      flex: none; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
+      padding: 0.14rem 0.45rem; border-radius: 100px; background: var(--cream-dark); color: #3d5c30;
+    }
+    .summary-point .pt-text { font-size: 0.88rem; line-height: 1.45; color: #1c2d16; }
+    .summary-empty { font-size: 0.86rem; color: #7a9a6a; font-style: italic; }
+    .ai-tag { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: #7a9a6a; margin-top: 0.4rem; }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -743,6 +800,32 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+      <div class="modal-head">
+        <h4 id="edit-modal-title">Edit record</h4>
+        <button class="modal-close" onclick="closeEditModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body-form" id="edit-modal-body"></div>
+      <div class="modal-foot">
+        <span class="edit-error" id="edit-error"></span>
+        <div style="flex:1"></div>
+        <button class="mini-btn ghost" onclick="closeEditModal()">Cancel</button>
+        <button class="mini-btn primary" id="edit-save-btn" onclick="saveEdit()">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="summary-modal" onclick="if(event.target===this)closeSummaryModal()">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="summary-modal-title">
+      <div class="modal-head">
+        <h4 id="summary-modal-title">AI summary</h4>
+        <button class="modal-close" onclick="closeSummaryModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body-form" id="summary-modal-body"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const state = {
@@ -754,7 +837,9 @@
       rowsPerPage: 10,
       charts: {},
       map: null,
-      mapLayer: null
+      mapLayer: null,
+      editType: null,
+      editId: null
     };
 
     // Known coordinates for the five fixed attractions, used to place points on
@@ -809,6 +894,29 @@
       transport: 'Transport Access',
       derelict: 'Derelict Land'
     };
+
+    // ─── Edit-form options (mirror the survey / EQA entry forms) ──
+    const TEAM_MEMBERS = ['Rick', 'Adam', 'Callum', 'Taylor'];
+    const ATTRACTION_NAMES = Object.keys(ATTRACTION_COORDS); // the five fixed sites
+    const LOCATION_OPTIONS = [...ATTRACTION_NAMES, 'Other'];
+    const SURVEY_SCALE = [
+      [5, '5 — Strongly agree'],
+      [4, '4'],
+      [3, '3 — Neutral'],
+      [2, '2'],
+      [1, '1 — Strongly disagree']
+    ];
+    // [points, description] per EQA feature, matching eqa-assessment.html.
+    const EQA_OPTIONS = {
+      lq:        [[0, 'Trees and well kept grassy area'], [4, 'Few trees and unkempt grassy area'], [8, 'No trees and no grassy areas']],
+      noise:     [[0, 'Quiet and secluded'], [4, 'Above normal residential standard'], [8, 'Main street / very noisy']],
+      air:       [[0, 'No obvious smell or pollution'], [10, 'Obvious smell and pollution']],
+      litter:    [[0, 'No litter'], [4, 'Some litter'], [8, 'Very untidy']],
+      vandalism: [[0, 'No vandalism'], [4, 'Some vandalism'], [8, 'Much vandalism']],
+      transport: [[0, 'Not very close to buses (>5 min walk)'], [4, 'Close to bus route'], [8, 'Very close (bus stop outside)']],
+      derelict:  [[0, 'None'], [4, 'Small area'], [10, 'Large area — major eyesore']]
+    };
+    const EQA_FEATURE_KEYS = Object.keys(eqaFeatureLabels);
 
     const thresholdLinePlugin = {
       id: 'thresholdLine',
@@ -1071,12 +1179,16 @@
         const date = row.submitted_at ? row.submitted_at.split(' ')[0] : '';
         const envScore = average(envKeys.map(key => Number(row[key]) || 0));
         const socialScore = average(socialKeys.map(key => Number(row[key]) || 0));
+        // Show the free-text label the respondent typed when "Other" was chosen.
+        const attraction = row.attraction === 'Other' && row.location_label
+          ? `Other — ${escapeHtml(row.location_label)}`
+          : escapeHtml(row.attraction || '');
         return `
           <tr>
             <td>${date}</td>
-            <td>${row.respondent_name || ''}</td>
-            <td>${row.interviewer || ''}</td>
-            <td>${row.attraction || ''}</td>
+            <td>${escapeHtml(row.respondent_name || '')}</td>
+            <td>${escapeHtml(row.interviewer || '')}</td>
+            <td>${attraction}</td>
             <td>${row.is_local || ''}</td>
             <td>${row.q1 || ''}</td>
             <td>${row.q2 || ''}</td>
@@ -1092,7 +1204,10 @@
             <td>${row.q12 || ''}</td>
             <td>${envScore.toFixed(1)}</td>
             <td>${socialScore.toFixed(1)}</td>
-            <td><button class="delete-btn" onclick="deleteRow('survey',${row.id})" title="Delete this response">×</button></td>
+            <td style="white-space:nowrap">
+              <button class="mini-btn" onclick="openEdit('survey',${row.id})">Edit</button>
+              <button class="delete-btn" onclick="deleteRow('survey',${row.id})" title="Delete this response">×</button>
+            </td>
           </tr>
         `;
       }).join('');
@@ -1294,11 +1409,15 @@
 
       tbody.innerHTML = rows.map(row => {
         const date = row.assess_date || (row.submitted_at ? row.submitted_at.split(' ')[0] : '');
+        // Show the free-text label the assessor typed when "Other" was chosen.
+        const location = row.location === 'Other' && row.location_label
+          ? `Other — ${escapeHtml(row.location_label)}`
+          : escapeHtml(row.location || '');
         return `
           <tr>
             <td>${date}</td>
-            <td>${row.location || ''}</td>
-            <td>${row.assessor || ''}</td>
+            <td>${location}</td>
+            <td>${escapeHtml(row.assessor || '')}</td>
             <td>${row.lq ?? ''}</td>
             <td>${row.noise ?? ''}</td>
             <td>${row.air ?? ''}</td>
@@ -1307,8 +1426,11 @@
             <td>${row.transport ?? ''}</td>
             <td>${row.derelict ?? ''}</td>
             <td>${row.total_score ?? ''}</td>
-            <td>${row.notes || ''}</td>
-            <td><button class="delete-btn" onclick="deleteRow('eqa',${row.id})" title="Delete this assessment">×</button></td>
+            <td>${escapeHtml(row.notes || '')}</td>
+            <td style="white-space:nowrap">
+              <button class="mini-btn" onclick="openEdit('eqa',${row.id})">Edit</button>
+              <button class="delete-btn" onclick="deleteRow('eqa',${row.id})" title="Delete this assessment">×</button>
+            </td>
           </tr>
         `;
       }).join('');
@@ -1357,6 +1479,9 @@
           ? `<audio controls preload="none" style="width:150px" src="/api/admin/interviews/${row.id}/audio"></audio>`
           : '<span style="color:#7a9a6a">no audio</span>';
         const src = row.transcript_source ? `<div class="src-tag">${escapeHtml(row.transcript_source)}</div>` : '';
+        const hasTranscript = !!(row.transcript && row.transcript.trim());
+        const hasSummary = !!(row.summary && row.summary.trim());
+        const summaryTag = hasSummary ? '<div class="ai-tag">✦ AI summary ready</div>' : '';
         const transcript = (row.transcript && row.transcript.trim())
           ? `<div class="transcript-preview">${escapeHtml(row.transcript)}</div>
              <button class="mini-btn" style="margin-top:0.45rem" onclick="viewTranscript(${row.id})">Read full ↗</button>`
@@ -1368,10 +1493,12 @@
             <td>${escapeHtml(row.interviewer || '')}</td>
             <td>${escapeHtml(row.interviewee || '')}</td>
             <td>${audio}</td>
-            <td class="transcript-cell" id="tr-cell-${row.id}">${transcript}${src}</td>
+            <td class="transcript-cell" id="tr-cell-${row.id}">${transcript}${src}${summaryTag}</td>
             <td>${escapeHtml(row.notes || '')}</td>
             <td style="white-space:nowrap">
               <button class="mini-btn" onclick="transcribeInterview(${row.id}, this)"${row.audio_file ? '' : ' disabled'}>Transcribe</button>
+              <button class="mini-btn" onclick="summarizeInterview(${row.id}, this)"${hasTranscript ? '' : ' disabled'}>${hasSummary ? 'Re-summarize' : 'Summarize'}</button>
+              ${hasSummary ? `<button class="mini-btn" onclick="openSummaryModal(${row.id})">View summary</button>` : ''}
               <button class="mini-btn" onclick="editTranscript(${row.id})">Edit</button>
               <button class="delete-btn" onclick="deleteRow('interviews',${row.id})" title="Delete this interview">×</button>
             </td>
@@ -1411,7 +1538,7 @@
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeTranscriptModal();
+      if (e.key === 'Escape') { closeTranscriptModal(); closeEditModal(); closeSummaryModal(); }
     });
 
     async function editTranscript(id) {
@@ -1430,6 +1557,250 @@
         switchTab('interviews');
       } catch (_) {
         alert('Failed to save transcript.');
+      }
+    }
+
+    // ─── AI interview summary ────────────────────────────
+    const STANCE_GROUPS = [
+      { key: 'supports',    label: 'Supports the hypothesis',    cls: 'supports',    badge: 'supported' },
+      { key: 'contradicts', label: 'Contradicts the hypothesis', cls: 'contradicts', badge: 'not-supported' },
+      { key: 'neutral',     label: 'Neutral / unclear',          cls: 'neutral',     badge: 'partial' }
+    ];
+
+    async function summarizeInterview(id, btn) {
+      const original = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      try {
+        const r = await fetch(`/api/admin/interviews/${id}/summarize`, { method: 'POST' });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) throw new Error(data.error || 'Summary failed.');
+        await loadAllData();
+        switchTab('interviews');
+        openSummaryModal(id);
+      } catch (err) {
+        alert(err.message);
+        if (btn) { btn.disabled = false; btn.textContent = original || 'Summarize'; }
+      }
+    }
+
+    function openSummaryModal(id) {
+      const row = state.interviewRows.find(r => r.id === id);
+      if (!row || !row.summary) return;
+      let data;
+      try { data = JSON.parse(row.summary); } catch (_) { return; }
+      const points = Array.isArray(data.points) ? data.points : [];
+
+      const meta = [
+        row.submitted_at ? row.submitted_at.split(' ')[0] : '',
+        row.interviewee,
+        row.location === 'Other' && row.location_label ? `Other — ${row.location_label}` : row.location
+      ].filter(Boolean).join(' · ');
+
+      const counts = STANCE_GROUPS.map(g => {
+        const n = points.filter(p => p.stance === g.key).length;
+        return `<span class="badge ${g.badge}">${n} ${g.key}</span>`;
+      }).join('');
+
+      const groupsHtml = STANCE_GROUPS.map(g => {
+        const items = points.filter(p => p.stance === g.key);
+        if (!items.length) return '';
+        const rows = items.map(p => `
+          <div class="summary-point">
+            <span class="dim-tag">${escapeHtml(p.dimension || 'general')}</span>
+            <span class="pt-text">${escapeHtml(p.point || '')}</span>
+          </div>`).join('');
+        return `<div class="summary-group ${g.cls}"><h5>${escapeHtml(g.label)} (${items.length})</h5>${rows}</div>`;
+      }).join('');
+
+      document.getElementById('summary-modal-body').innerHTML = `
+        ${meta ? `<div class="summary-meta">${escapeHtml(meta)}</div>` : ''}
+        <div class="summary-overview">${escapeHtml(data.summary || '')}</div>
+        <div class="summary-counts">${counts}</div>
+        ${groupsHtml || '<div class="summary-empty">No key points were extracted.</div>'}
+        ${row.summary_model ? `<div class="ai-tag">Generated by ${escapeHtml(row.summary_model)}${row.summary_updated_at ? ' · ' + escapeHtml(String(row.summary_updated_at).split(' ')[0]) : ''}</div>` : ''}
+      `;
+      document.getElementById('summary-modal').classList.add('open');
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('summary-modal').classList.remove('open');
+    }
+
+    // ─── Survey / EQA edit modal ─────────────────────────
+    function efField(labelText, controlHtml, full) {
+      return `<div class="ef-field${full ? ' full' : ''}"><label>${escapeHtml(labelText)}</label>${controlHtml}</div>`;
+    }
+
+    // options: array of [value, label]. Pass blankLabel to prepend an empty option.
+    function efSelect(id, options, selected, blankLabel) {
+      const sel = selected == null ? '' : String(selected);
+      let opts = '';
+      if (blankLabel !== undefined) {
+        opts += `<option value=""${sel === '' ? ' selected' : ''}>${escapeHtml(blankLabel)}</option>`;
+      }
+      opts += options.map(([value, label]) => {
+        const v = String(value);
+        return `<option value="${escapeHtml(v)}"${v === sel ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+      return `<select class="ef-input" id="${id}">${opts}</select>`;
+    }
+
+    function locationLabelField(value, shown) {
+      return `<div class="ef-field full" id="edit-loc-wrap"${shown ? '' : ' style="display:none"'}>` +
+        `<label>Location label</label>` +
+        `<input class="ef-input" id="edit-location_label" maxlength="120" value="${escapeHtml(value || '')}"></div>`;
+    }
+
+    function buildSurveyForm(row) {
+      const team = TEAM_MEMBERS.map(m => [m, m]);
+      const attractions = LOCATION_OPTIONS.map(a => [a, a === 'Other' ? 'Other / elsewhere in Rotorua' : a]);
+      const localOpts = [['yes', 'Local resident'], ['no', 'Visitor']];
+      let html = '<div class="ef-grid">';
+      html += efField('Interviewer', efSelect('edit-interviewer', team, row.interviewer, 'Unassigned'));
+      html += efField('Respondent name', `<input class="ef-input" id="edit-respondent_name" maxlength="80" value="${escapeHtml(row.respondent_name || '')}">`);
+      html += efField('Attraction', efSelect('edit-attraction', attractions, row.attraction));
+      html += efField('Local resident?', efSelect('edit-is_local', localOpts, row.is_local));
+      html += locationLabelField(row.location_label, row.attraction === 'Other');
+      html += '<div class="ef-section">Survey answers · 5 = strongly agree, 1 = strongly disagree</div>';
+      for (let i = 1; i <= 12; i++) {
+        html += efField(`Q${i}. ${questionLabels[i - 1]}`, efSelect(`edit-q${i}`, SURVEY_SCALE, row[`q${i}`]));
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function buildEqaForm(row) {
+      const team = TEAM_MEMBERS.map(m => [m, m]);
+      const locations = LOCATION_OPTIONS.map(a => [a, a === 'Other' ? 'Other / elsewhere in Rotorua' : a]);
+      let html = '<div class="ef-grid">';
+      html += efField('Location', efSelect('edit-location', locations, row.location));
+      html += efField('Assessor', efSelect('edit-assessor', team, row.assessor, 'Unassigned'));
+      html += locationLabelField(row.location_label, row.location === 'Other');
+      html += efField('Assessment date', `<input class="ef-input" type="date" id="edit-assess_date" value="${escapeHtml(row.assess_date || '')}">`);
+      html += '<div class="ef-section">Environmental penalties · lower is better</div>';
+      EQA_FEATURE_KEYS.forEach(key => {
+        const opts = EQA_OPTIONS[key].map(([v, label]) => [v, `${v} pts — ${label}`]);
+        html += efField(eqaFeatureLabels[key], efSelect(`edit-${key}`, opts, row[key]));
+      });
+      html += `<div class="ef-total-line">Total penalty score: <span class="ef-total" id="edit-eqa-total">${row.total_score ?? 0}</span> / 60</div>`;
+      html += '<div class="ef-section">Map location (optional)</div>';
+      html += efField('Latitude', `<input class="ef-input" type="number" step="any" id="edit-latitude" value="${row.latitude ?? ''}">`);
+      html += efField('Longitude', `<input class="ef-input" type="number" step="any" id="edit-longitude" value="${row.longitude ?? ''}">`);
+      html += efField('Notes', `<textarea class="ef-input" id="edit-notes">${escapeHtml(row.notes || '')}</textarea>`, true);
+      html += '</div>';
+      return html;
+    }
+
+    function openEdit(type, id) {
+      const rows = type === 'survey' ? state.surveyRows : state.eqaRows;
+      const row = rows.find(r => r.id === id);
+      if (!row) return;
+      state.editType = type;
+      state.editId = id;
+      document.getElementById('edit-modal-title').textContent =
+        type === 'survey' ? 'Edit survey response' : 'Edit EQA assessment';
+      document.getElementById('edit-error').textContent = '';
+      document.getElementById('edit-modal-body').innerHTML =
+        type === 'survey' ? buildSurveyForm(row) : buildEqaForm(row);
+
+      // Reveal the free-text location label only when "Other" is chosen.
+      const locSel = document.getElementById(type === 'survey' ? 'edit-attraction' : 'edit-location');
+      if (locSel) {
+        locSel.addEventListener('change', () => {
+          const wrap = document.getElementById('edit-loc-wrap');
+          if (wrap) wrap.style.display = locSel.value === 'Other' ? '' : 'none';
+        });
+      }
+      if (type === 'eqa') attachEqaTotal();
+      document.getElementById('edit-modal').classList.add('open');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.remove('open');
+      state.editType = null;
+      state.editId = null;
+    }
+
+    // Keep the EQA total in sync with the selected penalties as they change.
+    function attachEqaTotal() {
+      const recompute = () => {
+        const total = EQA_FEATURE_KEYS.reduce((sum, key) => {
+          const el = document.getElementById(`edit-${key}`);
+          return sum + (el ? (parseInt(el.value, 10) || 0) : 0);
+        }, 0);
+        const out = document.getElementById('edit-eqa-total');
+        if (out) out.textContent = total;
+      };
+      EQA_FEATURE_KEYS.forEach(key => {
+        const el = document.getElementById(`edit-${key}`);
+        if (el) el.addEventListener('change', recompute);
+      });
+      recompute();
+    }
+
+    function saveEdit() {
+      if (state.editType === 'survey') return saveSurveyEdit();
+      if (state.editType === 'eqa') return saveEqaEdit();
+    }
+
+    function fieldValue(id) {
+      const el = document.getElementById(id);
+      return el ? el.value : '';
+    }
+
+    function saveSurveyEdit() {
+      const row = state.surveyRows.find(r => r.id === state.editId) || {};
+      const attraction = fieldValue('edit-attraction');
+      const payload = {
+        respondent_name: fieldValue('edit-respondent_name').trim(),
+        interviewer: fieldValue('edit-interviewer'),
+        attraction,
+        is_local: fieldValue('edit-is_local'),
+        location_label: attraction === 'Other' ? fieldValue('edit-location_label').trim() : '',
+        latitude: row.latitude,   // preserve coords the entry form never collected
+        longitude: row.longitude
+      };
+      for (let i = 1; i <= 12; i++) payload[`q${i}`] = parseInt(fieldValue(`edit-q${i}`), 10);
+      submitEdit('survey', payload);
+    }
+
+    function saveEqaEdit() {
+      const location = fieldValue('edit-location');
+      const payload = {
+        location,
+        location_label: location === 'Other' ? fieldValue('edit-location_label').trim() : '',
+        assess_date: fieldValue('edit-assess_date'),
+        assessor: fieldValue('edit-assessor'),
+        notes: fieldValue('edit-notes').trim(),
+        latitude: fieldValue('edit-latitude'),
+        longitude: fieldValue('edit-longitude')
+      };
+      EQA_FEATURE_KEYS.forEach(key => { payload[key] = parseInt(fieldValue(`edit-${key}`), 10); });
+      submitEdit('eqa', payload);
+    }
+
+    async function submitEdit(type, payload) {
+      const btn = document.getElementById('edit-save-btn');
+      const errEl = document.getElementById('edit-error');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        const r = await fetch(`/api/admin/${type}/${state.editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) throw new Error(data.error || 'Failed to save changes.');
+        closeEditModal();
+        await loadAllData();
+        switchTab(type);
+      } catch (err) {
+        errEl.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save changes';
       }
     }
 

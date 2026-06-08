@@ -70,7 +70,10 @@ db.exec(`
     audio_file TEXT,
     transcript TEXT,
     transcript_source TEXT,
-    notes TEXT
+    notes TEXT,
+    summary TEXT,
+    summary_updated_at TEXT,
+    summary_model TEXT
   );
 `);
 
@@ -84,7 +87,10 @@ const migrations = [
   `ALTER TABLE survey_responses ADD COLUMN longitude REAL`,
   `ALTER TABLE eqa_assessments ADD COLUMN location_label TEXT`,
   `ALTER TABLE eqa_assessments ADD COLUMN latitude REAL`,
-  `ALTER TABLE eqa_assessments ADD COLUMN longitude REAL`
+  `ALTER TABLE eqa_assessments ADD COLUMN longitude REAL`,
+  `ALTER TABLE interviews ADD COLUMN summary TEXT`,
+  `ALTER TABLE interviews ADD COLUMN summary_updated_at TEXT`,
+  `ALTER TABLE interviews ADD COLUMN summary_model TEXT`
 ];
 for (const sql of migrations) {
   try { db.exec(sql); } catch (_) { /* column already exists */ }

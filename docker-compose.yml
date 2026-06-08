@@ -9,6 +9,9 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       # Optional: enables interview transcription. Leave unset to disable.
       - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY:-}
+      # Optional: enables AI interview summaries (Google Gemini). Leave unset to disable.
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SUMMARY_MODEL=${SUMMARY_MODEL:-gemini-2.5-flash}
       - DATA_DIR=/app/data
     volumes:
       # Named volume keeps the SQLite database AND interview audio across redeploys.
