@@ -55,7 +55,16 @@ db.exec(`
     transport INTEGER,
     derelict INTEGER,
     total_score INTEGER,
-    notes TEXT
+    notes TEXT,
+    -- v2 model: 21 features in 7 categories, each 0/2/4 (penalty). total_score = sum of deductions (0-84).
+    waste_litter INTEGER, waste_bins_find INTEGER, waste_bins_use INTEGER,
+    nature_healthy INTEGER, nature_native INTEGER, nature_tracks INTEGER,
+    poll_clean INTEGER, poll_noise INTEGER, poll_resources INTEGER,
+    crowd_space INTEGER, crowd_managed INTEGER, crowd_barriers INTEGER,
+    access_disability INTEGER, access_facilities INTEGER, access_transport INTEGER,
+    culture_reo INTEGER, culture_respect INTEGER, culture_iwi INTEGER,
+    edu_info INTEGER, edu_encourage INTEGER, edu_programmes INTEGER,
+    strongest_feature TEXT
   );
 
   CREATE TABLE IF NOT EXISTS interviews (
@@ -90,7 +99,30 @@ const migrations = [
   `ALTER TABLE eqa_assessments ADD COLUMN longitude REAL`,
   `ALTER TABLE interviews ADD COLUMN summary TEXT`,
   `ALTER TABLE interviews ADD COLUMN summary_updated_at TEXT`,
-  `ALTER TABLE interviews ADD COLUMN summary_model TEXT`
+  `ALTER TABLE interviews ADD COLUMN summary_model TEXT`,
+  // EQA v2: 21-feature model. Old lq/noise/... columns stay for legacy rows.
+  `ALTER TABLE eqa_assessments ADD COLUMN waste_litter INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN waste_bins_find INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN waste_bins_use INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN nature_healthy INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN nature_native INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN nature_tracks INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN poll_clean INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN poll_noise INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN poll_resources INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN crowd_space INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN crowd_managed INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN crowd_barriers INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN access_disability INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN access_facilities INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN access_transport INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN culture_reo INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN culture_respect INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN culture_iwi INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN edu_info INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN edu_encourage INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN edu_programmes INTEGER`,
+  `ALTER TABLE eqa_assessments ADD COLUMN strongest_feature TEXT`
 ];
 for (const sql of migrations) {
   try { db.exec(sql); } catch (_) { /* column already exists */ }

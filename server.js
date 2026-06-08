@@ -69,7 +69,20 @@ app.use((req, res, next) => {
 const QUESTION_KEYS = Array.from({ length: 12 }, (_, i) => `q${i + 1}`);
 const ENV_KEYS = ['q1', 'q2', 'q3', 'q4', 'q6', 'q9'];
 const SOCIAL_KEYS = ['q5', 'q7', 'q8', 'q10', 'q11', 'q12'];
-const EQA_FEATURES = ['lq', 'noise', 'air', 'litter', 'vandalism', 'transport', 'derelict'];
+// EQA v2 model — 7 categories x 3 features, each scored 0/2/4 (penalty). Final = 84 - sum of deductions.
+const EQA_CATEGORIES = [
+  { key: 'waste',     label: 'Waste & recycling',                    features: ['waste_litter', 'waste_bins_find', 'waste_bins_use'] },
+  { key: 'nature',    label: 'Natural landscape & biodiversity',     features: ['nature_healthy', 'nature_native', 'nature_tracks'] },
+  { key: 'pollution', label: 'Pollution & resource management',      features: ['poll_clean', 'poll_noise', 'poll_resources'] },
+  { key: 'crowding',  label: 'Visitor pressure & crowding',          features: ['crowd_space', 'crowd_managed', 'crowd_barriers'] },
+  { key: 'access',    label: 'Accessibility & visitor facilities',   features: ['access_disability', 'access_facilities', 'access_transport'] },
+  { key: 'culture',   label: 'Cultural sustainability',              features: ['culture_reo', 'culture_respect', 'culture_iwi'] },
+  { key: 'education', label: 'Sustainability education & management', features: ['edu_info', 'edu_encourage', 'edu_programmes'] }
+];
+const EQA_FEATURES_V2 = EQA_CATEGORIES.flatMap(c => c.features); // 21 feature keys
+const EQA_MAX_SCORE = 84;
+// A row uses the new model only once its 21 features are populated; older rows are "legacy".
+const isEqaV2 = row => EQA_FEATURES_V2.every(k => row[k] !== null && row[k] !== undefined);
 // Team members who conduct surveys, interviews, and EQA assessments.
 const TEAM_MEMBERS = ['Rick', 'Adam', 'Callum', 'Taylor'];
 const parseTeamMember = value =>
@@ -228,18 +241,13 @@ function parseEqaBody(body) {
   const location = typeof body.location === 'string' ? body.location.trim() : '';
   if (!location) return { error: 'Location is required.' };
 
-  const lq = parseAllowed(body.lq, [0, 4, 8]);
-  const noise = parseAllowed(body.noise, [0, 4, 8]);
-  const air = parseAllowed(body.air, [0, 10]);
-  const litter = parseAllowed(body.litter, [0, 4, 8]);
-  const vandalism = parseAllowed(body.vandalism, [0, 4, 8]);
-  const transport = parseAllowed(body.transport, [0, 4, 8]);
-  const derelict = parseAllowed(body.derelict, [0, 4, 10]);
-
-  const scores = [lq, noise, air, litter, vandalism, transport, derelict];
-  if (scores.some(value => value === null)) {
-    return { error: 'All EQA feature scores must be selected.' };
+  const features = {};
+  for (const key of EQA_FEATURES_V2) {
+    const value = parseAllowed(body[key], [0, 2, 4]);
+    if (value === null) return { error: 'Every feature must be scored 0, 2 or 4.' };
+    features[key] = value;
   }
+  const totalScore = EQA_FEATURES_V2.reduce((sum, key) => sum + features[key], 0); // 0..84 deductions
 
   return {
     values: {
@@ -249,32 +257,31 @@ function parseEqaBody(body) {
       longitude: parseCoord(body.longitude, -180, 180),
       assessDate: typeof body.assess_date === 'string' ? body.assess_date.trim() : '',
       assessor: parseTeamMember(body.assessor),
-      lq, noise, air, litter, vandalism, transport, derelict,
-      totalScore: scores.reduce((sum, value) => sum + value, 0),
+      features,
+      totalScore,
+      strongest: typeof body.strongest_feature === 'string' ? body.strongest_feature.trim().slice(0, 120) : '',
       notes: typeof body.notes === 'string' ? body.notes.trim() : ''
     }
   };
 }
 
+// Column order shared by the EQA insert/update so the 21 features stay in sync.
+const EQA_META_COLS = ['location', 'location_label', 'latitude', 'longitude', 'assess_date', 'assessor', 'total_score', 'strongest_feature', 'notes'];
+const EQA_WRITE_COLS = [...EQA_META_COLS, ...EQA_FEATURES_V2];
+const eqaWriteValues = v => [
+  v.location, v.locationLabel, v.latitude, v.longitude, v.assessDate || null, v.assessor || null,
+  v.totalScore, v.strongest || null, v.notes || null,
+  ...EQA_FEATURES_V2.map(key => v.features[key])
+];
+
 app.post('/api/eqa', (req, res) => {
   try {
     const parsed = parseEqaBody(req.body);
     if (parsed.error) return sendError(res, 400, parsed.error);
-    const v = parsed.values;
 
-    const stmt = db.prepare(`
-      INSERT INTO eqa_assessments (
-        location, location_label, latitude, longitude, assess_date, assessor,
-        lq, noise, air, litter, vandalism, transport, derelict, total_score, notes
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-      )
-    `);
-
-    const info = stmt.run(
-      v.location, v.locationLabel, v.latitude, v.longitude, v.assessDate || null, v.assessor || null,
-      v.lq, v.noise, v.air, v.litter, v.vandalism, v.transport, v.derelict, v.totalScore, v.notes || null
-    );
+    const placeholders = EQA_WRITE_COLS.map(() => '?').join(', ');
+    const stmt = db.prepare(`INSERT INTO eqa_assessments (${EQA_WRITE_COLS.join(', ')}) VALUES (${placeholders})`);
+    const info = stmt.run(...eqaWriteValues(parsed.values));
 
     return res.json({ success: true, id: info.lastInsertRowid });
   } catch (error) {
@@ -344,66 +351,51 @@ app.get('/api/admin/stats', (req, res) => {
       }))
       .sort((a, b) => b.count - a.count);
 
-    const eqaTotal = eqaRows.length;
-    const avgTotalScore = average(
-      eqaRows.map(row => {
-        const total = parseIntStrict(row.total_score);
-        if (total !== null) return total;
-        return EQA_FEATURES.reduce((sum, key) => sum + (parseIntStrict(row[key]) || 0), 0);
-      })
-    );
+    // Only v2 assessments feed the new aggregates; legacy rows are counted but excluded.
+    const eqaV2Rows = eqaRows.filter(isEqaV2);
+    const eqaTotal = eqaV2Rows.length;
+    const legacyCount = eqaRows.length - eqaV2Rows.length;
 
-    const avgPerFeature = {};
-    EQA_FEATURES.forEach(key => {
-      const values = eqaRows
-        .map(row => parseIntStrict(row[key]))
-        .filter(value => value !== null);
-      avgPerFeature[key] = values.length ? average(values) : 0;
+    const catDeduction = (row, cat) => cat.features.reduce((sum, key) => sum + (parseIntStrict(row[key]) || 0), 0);
+    const totalDeduction = row => EQA_FEATURES_V2.reduce((sum, key) => sum + (parseIntStrict(row[key]) || 0), 0);
+
+    const avgFinalScore = eqaTotal ? EQA_MAX_SCORE - average(eqaV2Rows.map(totalDeduction)) : 0;
+
+    const avgPerCategory = {};
+    EQA_CATEGORIES.forEach(cat => {
+      avgPerCategory[cat.key] = eqaTotal ? average(eqaV2Rows.map(row => catDeduction(row, cat))) : 0;
+    });
+
+    // Weakest category = the one losing the most points on average.
+    let weakest = { key: null, value: -1 };
+    EQA_CATEGORIES.forEach(cat => {
+      if (avgPerCategory[cat.key] > weakest.value) weakest = { key: cat.key, value: avgPerCategory[cat.key] };
     });
 
     const locationMap = new Map();
-    eqaRows.forEach(row => {
+    eqaV2Rows.forEach(row => {
       const location = row.location || 'Unknown';
       if (!locationMap.has(location)) {
-        locationMap.set(location, {
-          location,
-          count: 0,
-          totalSum: 0,
-          lqSum: 0,
-          noiseSum: 0,
-          airSum: 0,
-          litterSum: 0,
-          vandalismSum: 0,
-          transportSum: 0,
-          derelictSum: 0
-        });
+        const entry = { location, count: 0, deductionSum: 0 };
+        EQA_CATEGORIES.forEach(cat => { entry[cat.key] = 0; });
+        locationMap.set(location, entry);
       }
       const entry = locationMap.get(location);
       entry.count += 1;
-      const rowTotal = parseIntStrict(row.total_score) || EQA_FEATURES.reduce((sum, key) => sum + (parseIntStrict(row[key]) || 0), 0);
-      entry.totalSum += rowTotal;
-      entry.lqSum += parseIntStrict(row.lq) || 0;
-      entry.noiseSum += parseIntStrict(row.noise) || 0;
-      entry.airSum += parseIntStrict(row.air) || 0;
-      entry.litterSum += parseIntStrict(row.litter) || 0;
-      entry.vandalismSum += parseIntStrict(row.vandalism) || 0;
-      entry.transportSum += parseIntStrict(row.transport) || 0;
-      entry.derelictSum += parseIntStrict(row.derelict) || 0;
+      entry.deductionSum += totalDeduction(row);
+      EQA_CATEGORIES.forEach(cat => { entry[cat.key] += catDeduction(row, cat); });
     });
 
     const byLocation = Array.from(locationMap.values())
-      .map(entry => ({
-        location: entry.location,
-        count: entry.count,
-        total_score: entry.count ? entry.totalSum / entry.count : 0,
-        lq: entry.count ? entry.lqSum / entry.count : 0,
-        noise: entry.count ? entry.noiseSum / entry.count : 0,
-        air: entry.count ? entry.airSum / entry.count : 0,
-        litter: entry.count ? entry.litterSum / entry.count : 0,
-        vandalism: entry.count ? entry.vandalismSum / entry.count : 0,
-        transport: entry.count ? entry.transportSum / entry.count : 0,
-        derelict: entry.count ? entry.derelictSum / entry.count : 0
-      }))
+      .map(entry => {
+        const out = {
+          location: entry.location,
+          count: entry.count,
+          final_score: entry.count ? EQA_MAX_SCORE - entry.deductionSum / entry.count : 0
+        };
+        EQA_CATEGORIES.forEach(cat => { out[cat.key] = entry.count ? entry[cat.key] / entry.count : 0; });
+        return out;
+      })
       .sort((a, b) => a.location.localeCompare(b.location));
 
     return res.json({
@@ -418,8 +410,12 @@ app.get('/api/admin/stats', (req, res) => {
       },
       eqa: {
         total_assessments: eqaTotal,
-        avg_total_score: avgTotalScore,
-        avg_per_feature: avgPerFeature,
+        legacy_count: legacyCount,
+        max_score: EQA_MAX_SCORE,
+        avg_final_score: avgFinalScore,
+        avg_per_category: avgPerCategory,
+        weakest_category: weakest.key,
+        categories: EQA_CATEGORIES.map(cat => ({ key: cat.key, label: cat.label })),
         by_location: byLocation
       }
     });
@@ -473,18 +469,10 @@ app.put('/api/admin/eqa/:id', (req, res) => {
 
     const parsed = parseEqaBody(req.body);
     if (parsed.error) return sendError(res, 400, parsed.error);
-    const v = parsed.values;
 
-    const result = db.prepare(`
-      UPDATE eqa_assessments SET
-        location = ?, location_label = ?, latitude = ?, longitude = ?, assess_date = ?, assessor = ?,
-        lq = ?, noise = ?, air = ?, litter = ?, vandalism = ?, transport = ?, derelict = ?, total_score = ?, notes = ?
-      WHERE id = ?
-    `).run(
-      v.location, v.locationLabel, v.latitude, v.longitude, v.assessDate || null, v.assessor || null,
-      v.lq, v.noise, v.air, v.litter, v.vandalism, v.transport, v.derelict, v.totalScore, v.notes || null,
-      id
-    );
+    const setClause = EQA_WRITE_COLS.map(col => `${col} = ?`).join(', ');
+    const result = db.prepare(`UPDATE eqa_assessments SET ${setClause} WHERE id = ?`)
+      .run(...eqaWriteValues(parsed.values), id);
 
     if (result.changes === 0) return sendError(res, 404, 'EQA assessment not found.');
     return res.json({ success: true });
@@ -785,7 +773,10 @@ app.get('/api/export/survey.csv', (req, res) => {
 app.get('/api/export/eqa.csv', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM eqa_assessments ORDER BY submitted_at DESC, id DESC').all();
-    const csv = buildCsv(rows, [
+    // total_score holds deductions on v2 rows; surface the final score too. Legacy rows leave it blank.
+    rows.forEach(row => { row.final_score = isEqaV2(row) ? EQA_MAX_SCORE - (parseIntStrict(row.total_score) || 0) : ''; });
+
+    const columns = [
       { key: 'id', header: 'id' },
       { key: 'submitted_at', header: 'submitted_at' },
       { key: 'location', header: 'location' },
@@ -794,16 +785,15 @@ app.get('/api/export/eqa.csv', (req, res) => {
       { key: 'longitude', header: 'longitude' },
       { key: 'assess_date', header: 'assess_date' },
       { key: 'assessor', header: 'assessor' },
-      { key: 'lq', header: 'lq' },
-      { key: 'noise', header: 'noise' },
-      { key: 'air', header: 'air' },
-      { key: 'litter', header: 'litter' },
-      { key: 'vandalism', header: 'vandalism' },
-      { key: 'transport', header: 'transport' },
-      { key: 'derelict', header: 'derelict' },
-      { key: 'total_score', header: 'total_score' },
+      { key: 'total_score', header: 'total_deductions' },
+      { key: 'final_score', header: 'final_score' },
+      { key: 'strongest_feature', header: 'strongest_feature' },
+      ...EQA_FEATURES_V2.map(key => ({ key, header: key })),
+      // legacy 7-feature columns, kept so old assessments still export
+      ...['lq', 'noise', 'air', 'litter', 'vandalism', 'transport', 'derelict'].map(key => ({ key, header: 'legacy_' + key })),
       { key: 'notes', header: 'notes' }
-    ]);
+    ];
+    const csv = buildCsv(rows, columns);
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="eqa_assessments.csv"');

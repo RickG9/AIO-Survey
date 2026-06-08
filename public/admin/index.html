@@ -657,33 +657,35 @@
         <div class="card stat-card">
           <h3>Total Assessments</h3>
           <div class="stat-value" id="eqa-total">0</div>
+          <div class="stat-sub" id="eqa-legacy" style="color:#7a9a6a;font-size:0.74rem;"></div>
         </div>
         <div class="card stat-card">
-          <h3>Average Environmental Quality</h3>
-          <div class="stat-value" id="eqa-avg">0.0 / 60</div>
+          <h3>Average Sustainability Score</h3>
+          <div class="stat-value" id="eqa-avg">0 / 84</div>
           <div class="stat-sub" id="eqa-avg-band" style="font-weight:700;">—</div>
           <div class="stat-sub" style="color:#7a9a6a;font-size:0.74rem;margin-top:0.15rem;">
-            Penalty score — <strong>lower is better</strong>. 0 = pristine, 60 = severely degraded.
+            <strong>Higher is better.</strong> 84 = fully sustainable, 0 = many issues.
           </div>
         </div>
         <div class="card stat-card">
-          <h3>Worst Performing Feature</h3>
-          <div class="stat-value" id="eqa-worst">—</div>
+          <h3>Weakest Area</h3>
+          <div class="stat-value" id="eqa-worst" style="font-size:1.2rem;">—</div>
+          <div class="stat-sub" style="color:#7a9a6a;font-size:0.74rem;">Category losing the most points</div>
         </div>
       </div>
 
       <div class="section-title">EQA Insights</div>
       <div class="chart-grid">
         <div class="card chart-card">
-          <h4>Total EQA Score by Location</h4>
+          <h4>Final EQA Score by Location (/84)</h4>
           <div class="chart-wrap"><canvas id="chart-eqa-total"></canvas></div>
         </div>
         <div class="card chart-card">
-          <h4>Penalty Breakdown by Location</h4>
+          <h4>Deductions by Category &amp; Location</h4>
           <div class="chart-wrap"><canvas id="chart-eqa-stack"></canvas></div>
         </div>
         <div class="card chart-card">
-          <h4>Average Penalty per Feature (all locations)</h4>
+          <h4>Average Deductions per Category</h4>
           <div class="chart-wrap"><canvas id="chart-eqa-feature"></canvas></div>
         </div>
         <div class="card chart-card">
@@ -708,14 +710,14 @@
                 <th>Date</th>
                 <th>Location</th>
                 <th>Assessor</th>
-                <th>LQ</th>
-                <th>Noise</th>
-                <th>Air</th>
-                <th>Litter</th>
-                <th>Vandalism</th>
-                <th>Transport</th>
-                <th>Derelict</th>
-                <th>Total</th>
+                <th>Waste</th>
+                <th>Nature</th>
+                <th>Pollution</th>
+                <th>Crowding</th>
+                <th>Access</th>
+                <th>Culture</th>
+                <th>Education</th>
+                <th>Score /84</th>
                 <th>Notes</th>
                 <th></th>
               </tr>
@@ -885,15 +887,45 @@
     const envKeys = ['q1', 'q2', 'q3', 'q4', 'q6', 'q9'];
     const socialKeys = ['q5', 'q7', 'q8', 'q10', 'q11', 'q12'];
 
-    const eqaFeatureLabels = {
-      lq: 'Landscape Quality',
-      noise: 'Noise',
-      air: 'Air Pollution',
-      litter: 'Litter',
-      vandalism: 'Vandalism',
-      transport: 'Transport Access',
-      derelict: 'Derelict Land'
-    };
+    // ─── EQA v2 model (mirrors the assessment form + server) ──
+    const EQA_CATEGORIES = [
+      { key: 'waste', label: 'Waste & recycling', features: [
+        ['waste_litter', 'Little or no litter is visible'],
+        ['waste_bins_find', 'Recycling and rubbish bins are easy to find'],
+        ['waste_bins_use', 'Bins are clearly labelled and correctly used'] ] },
+      { key: 'nature', label: 'Natural landscape & biodiversity', features: [
+        ['nature_healthy', 'Trees, plants and green spaces appear healthy'],
+        ['nature_native', 'Native vegetation is protected or restored'],
+        ['nature_tracks', 'Tracks and visitor areas avoid damaging nature'] ] },
+      { key: 'pollution', label: 'Pollution & resource management', features: [
+        ['poll_clean', 'Little visible air, water or land pollution'],
+        ['poll_noise', 'Noise levels do not disturb the environment'],
+        ['poll_resources', 'Visible evidence of saving water or energy'] ] },
+      { key: 'crowding', label: 'Visitor pressure & crowding', features: [
+        ['crowd_space', 'The attraction does not feel overcrowded'],
+        ['crowd_managed', 'Visitor numbers appear well managed'],
+        ['crowd_barriers', 'Barriers / signs protect sensitive areas'] ] },
+      { key: 'access', label: 'Accessibility & visitor facilities', features: [
+        ['access_disability', 'Accessible for people with disabilities'],
+        ['access_facilities', 'Toilets, seating and rest areas are available and clean'],
+        ['access_transport', 'Public transport, shuttle or low-impact transport is available'] ] },
+      { key: 'culture', label: 'Cultural sustainability', features: [
+        ['culture_reo', 'Te reo Māori is used correctly in signs or presentations'],
+        ['culture_respect', 'Māori culture and history are represented respectfully'],
+        ['culture_iwi', 'Local iwi / community connections are explained'] ] },
+      { key: 'education', label: 'Sustainability education & management', features: [
+        ['edu_info', 'Visitors are given sustainability information'],
+        ['edu_encourage', 'Visitors are encouraged to behave sustainably'],
+        ['edu_programmes', 'Evidence of active sustainability programmes'] ] }
+    ];
+    const EQA_FEATURE_KEYS = EQA_CATEGORIES.flatMap(c => c.features.map(f => f[0]));
+    const EQA_CAT_LABELS = Object.fromEntries(EQA_CATEGORIES.map(c => [c.key, c.label]));
+    const EQA_MAX_SCORE = 84;
+    // A row uses the new model once its 21 features are populated; older rows are "legacy".
+    const isEqaV2 = row => EQA_FEATURE_KEYS.every(k => row[k] !== null && row[k] !== undefined);
+    const eqaDeductions = row => EQA_FEATURE_KEYS.reduce((s, k) => s + (Number(row[k]) || 0), 0);
+    const eqaFinalScore = row => EQA_MAX_SCORE - eqaDeductions(row);
+    const eqaCatDeduction = (row, cat) => cat.features.reduce((s, [k]) => s + (Number(row[k]) || 0), 0);
 
     // ─── Edit-form options (mirror the survey / EQA entry forms) ──
     const TEAM_MEMBERS = ['Rick', 'Adam', 'Callum', 'Taylor'];
@@ -906,17 +938,8 @@
       [2, '2'],
       [1, '1 — Strongly disagree']
     ];
-    // [points, description] per EQA feature, matching eqa-assessment.html.
-    const EQA_OPTIONS = {
-      lq:        [[0, 'Trees and well kept grassy area'], [4, 'Few trees and unkempt grassy area'], [8, 'No trees and no grassy areas']],
-      noise:     [[0, 'Quiet and secluded'], [4, 'Above normal residential standard'], [8, 'Main street / very noisy']],
-      air:       [[0, 'No obvious smell or pollution'], [10, 'Obvious smell and pollution']],
-      litter:    [[0, 'No litter'], [4, 'Some litter'], [8, 'Very untidy']],
-      vandalism: [[0, 'No vandalism'], [4, 'Some vandalism'], [8, 'Much vandalism']],
-      transport: [[0, 'Not very close to buses (>5 min walk)'], [4, 'Close to bus route'], [8, 'Very close (bus stop outside)']],
-      derelict:  [[0, 'None'], [4, 'Small area'], [10, 'Large area — major eyesore']]
-    };
-    const EQA_FEATURE_KEYS = Object.keys(eqaFeatureLabels);
+    // 0/2/4 penalty options shown for every feature in the edit modal.
+    const EQA_PENALTY_OPTIONS = [[0, '0 — No issue / excellent'], [2, '2 — Minor issue'], [4, '4 — Clear issue']];
 
     const thresholdLinePlugin = {
       id: 'thresholdLine',
@@ -1220,105 +1243,78 @@
     }
 
     function renderEqaStats(eqa) {
-      setText('eqa-total', eqa.total_assessments || 0);
+      const total = eqa.total_assessments || 0;
+      setText('eqa-total', total);
+      setText('eqa-legacy', eqa.legacy_count ? `+ ${eqa.legacy_count} legacy (old model)` : '');
 
-      const hasAssessments = (eqa.total_assessments || 0) > 0;
-      const avgScore = eqa.avg_total_score || 0;
-      setText('eqa-avg', `${avgScore.toFixed(1)} / 60`);
+      const avgScore = eqa.avg_final_score || 0;
+      setText('eqa-avg', `${avgScore.toFixed(1)} / 84`);
 
-      const band = eqaBand(hasAssessments ? avgScore : null);
+      const band = eqaBand(total ? avgScore : null);
       const bandEl = document.getElementById('eqa-avg-band');
       if (bandEl) {
         bandEl.textContent = band.label;
         bandEl.style.color = band.color;
       }
 
-      const avgPerFeature = eqa.avg_per_feature || {};
-      let worst = { key: null, value: -1 };
-      Object.keys(avgPerFeature).forEach(key => {
-        if (avgPerFeature[key] > worst.value) {
-          worst = { key, value: avgPerFeature[key] };
-        }
-      });
-      setText('eqa-worst', worst.key ? eqaFeatureLabels[worst.key] : '—');
+      const weakest = eqa.weakest_category;
+      setText('eqa-worst', (total && weakest) ? (EQA_CAT_LABELS[weakest] || weakest) : '—');
     }
 
     function renderEqaCharts(eqa) {
       const locations = eqa.by_location || [];
       const locationLabels = locations.map(row => row.location);
-      const totalScores = locations.map(row => row.total_score || 0);
+      const cats = eqa.categories || EQA_CATEGORIES.map(c => ({ key: c.key, label: c.label }));
 
-      const scoreColors = totalScores.map(score => {
-        if (score <= 15) return '#5a9c3e';
-        if (score <= 30) return '#c47c10';
-        if (score <= 45) return '#d05820';
-        return '#b84b20';
-      });
-
+      // Final score by location — higher is better, coloured by band.
+      const finals = locations.map(row => row.final_score || 0);
       buildChart('chart-eqa-total', 'bar', {
         labels: locationLabels,
-        datasets: [{
-          label: 'Total Score',
-          data: totalScores,
-          backgroundColor: scoreColors,
-          borderRadius: 6
-        }]
+        datasets: [{ label: 'Final score', data: finals, backgroundColor: finals.map(eqaColor), borderRadius: 6 }]
       }, {
         indexAxis: 'y',
-        scales: { x: { min: 0, max: 60 } },
-        plugins: { thresholdLine: { axis: 'x', value: 30, label: 'Midpoint' }, legend: { display: false } }
+        scales: { x: { min: 0, max: 84 } },
+        plugins: { thresholdLine: { axis: 'x', value: 51, label: 'Good' }, legend: { display: false } }
       });
 
-      const stackColors = ['#5a9c3e', '#78b35b', '#c47c10', '#d59a3a', '#d05820', '#c4471a', '#b84b20'];
-      const stackDatasets = Object.keys(eqaFeatureLabels).map((key, index) => ({
-        label: eqaFeatureLabels[key],
-        data: locations.map(row => row[key] || 0),
-        backgroundColor: stackColors[index]
+      // Deductions by category, stacked per location.
+      const stackColors = ['#2e6620', '#5a9c3e', '#c4a020', '#d59a3a', '#d05820', '#b84b20', '#1c5fb8'];
+      const stackDatasets = cats.map((cat, index) => ({
+        label: cat.label,
+        data: locations.map(row => row[cat.key] || 0),
+        backgroundColor: stackColors[index % stackColors.length]
       }));
-
       buildChart('chart-eqa-stack', 'bar', {
         labels: locationLabels,
         datasets: stackDatasets
       }, {
-        scales: {
-          x: { stacked: true },
-          y: { stacked: true, min: 0, max: 60 }
-        }
+        scales: { x: { stacked: true }, y: { stacked: true, min: 0, max: 84 } },
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } }
       });
 
-      const featureLabels = Object.keys(eqaFeatureLabels).map(key => eqaFeatureLabels[key]);
-      const featureValues = Object.keys(eqaFeatureLabels).map(key => (eqa.avg_per_feature || {})[key] || 0);
-
+      // Average deduction per category (0..12).
+      const avgPerCategory = eqa.avg_per_category || {};
       buildChart('chart-eqa-feature', 'bar', {
-        labels: featureLabels,
-        datasets: [{
-          label: 'Average penalty',
-          data: featureValues,
-          backgroundColor: '#2e6620'
-        }]
+        labels: cats.map(c => c.label),
+        datasets: [{ label: 'Avg deduction', data: cats.map(c => avgPerCategory[c.key] || 0), backgroundColor: '#b84b20' }]
       }, {
-        scales: { y: { min: 0, max: 10 } },
+        indexAxis: 'y',
+        scales: { x: { min: 0, max: 12 } },
         plugins: { legend: { display: false } }
       });
 
-      const avgScore = eqa.avg_total_score || 0;
-      let quality = 'Good';
-      if (avgScore > 45) quality = 'Very Poor';
-      else if (avgScore > 30) quality = 'Poor';
-      else if (avgScore > 15) quality = 'Moderate';
-
-      const support = avgScore <= 30 ? 'supports' : 'does not support';
-      const interpretation = `Based on EQA data, the average environmental quality score across assessed locations is ${avgScore.toFixed(1)} / 60, indicating ${quality} environmental quality. This ${support} the hypothesis that tourism in Rotorua is environmentally sustainable.`;
+      const total = eqa.total_assessments || 0;
+      const avgScore = eqa.avg_final_score || 0;
+      const band = eqaBand(total ? avgScore : null);
+      const support = avgScore >= 51 ? 'supports' : 'does not strongly support';
+      const interpretation = total
+        ? `Across ${total} assessment(s), the average sustainability score is ${avgScore.toFixed(1)} / 84 (${band.label}). Higher is better — this ${support} the hypothesis that tourism in Rotorua is environmentally sustainable.`
+        : 'No assessments under the current model yet.';
       setText('eqa-interpretation', interpretation);
 
       buildChart('chart-eqa-count', 'bar', {
         labels: locationLabels,
-        datasets: [{
-          label: 'Assessments',
-          data: locations.map(row => row.count || 0),
-          backgroundColor: '#2e6620',
-          borderRadius: 6
-        }]
+        datasets: [{ label: 'Assessments', data: locations.map(row => row.count || 0), backgroundColor: '#2e6620', borderRadius: 6 }]
       }, {
         scales: { y: { min: 0, ticks: { stepSize: 1 } } },
         plugins: { legend: { display: false } }
@@ -1413,44 +1409,57 @@
         const location = row.location === 'Other' && row.location_label
           ? `Other — ${escapeHtml(row.location_label)}`
           : escapeHtml(row.location || '');
+
+        // Legacy rows (old 7-feature model): show their old penalty total, delete only.
+        if (!isEqaV2(row)) {
+          return `
+            <tr style="opacity:0.65">
+              <td>${date}</td>
+              <td>${location}</td>
+              <td>${escapeHtml(row.assessor || '')}</td>
+              <td colspan="7" style="font-style:italic;color:#7a9a6a">Legacy assessment (old model) · old penalty ${row.total_score ?? '—'}/60</td>
+              <td>—</td>
+              <td>${escapeHtml(row.notes || '')}</td>
+              <td style="white-space:nowrap"><button class="delete-btn" onclick="deleteRow('eqa',${row.id})" title="Delete this assessment">×</button></td>
+            </tr>`;
+        }
+
+        const final = eqaFinalScore(row);
+        const fb = eqaBand(final);
+        const catCells = EQA_CATEGORIES.map(cat => `<td>${eqaCatDeduction(row, cat)}</td>`).join('');
         return `
           <tr>
             <td>${date}</td>
             <td>${location}</td>
             <td>${escapeHtml(row.assessor || '')}</td>
-            <td>${row.lq ?? ''}</td>
-            <td>${row.noise ?? ''}</td>
-            <td>${row.air ?? ''}</td>
-            <td>${row.litter ?? ''}</td>
-            <td>${row.vandalism ?? ''}</td>
-            <td>${row.transport ?? ''}</td>
-            <td>${row.derelict ?? ''}</td>
-            <td>${row.total_score ?? ''}</td>
+            ${catCells}
+            <td style="font-weight:700;color:${fb.color}">${final}</td>
             <td>${escapeHtml(row.notes || '')}</td>
             <td style="white-space:nowrap">
               <button class="mini-btn" onclick="openEdit('eqa',${row.id})">Edit</button>
               <button class="delete-btn" onclick="deleteRow('eqa',${row.id})" title="Delete this assessment">×</button>
             </td>
-          </tr>
-        `;
+          </tr>`;
       }).join('');
     }
 
     // ─── Interviews ──────────────────────────────────────
-    // EQA is a penalty score (lower = cleaner). Map a score to its quality band.
+    // EQA v2 is a final score out of 84 (higher = more sustainable). Map it to a band.
     function eqaBand(score) {
       if (score == null) return { label: 'No data', color: '#7a9a6a' };
-      if (score <= 15) return { label: 'Good environmental quality', color: '#2e6620' };
-      if (score <= 30) return { label: 'Moderate environmental quality', color: '#7a5800' };
-      if (score <= 45) return { label: 'Poor environmental quality', color: '#a04010' };
-      return { label: 'Very poor environmental quality', color: '#8a2010' };
+      if (score >= 68) return { label: 'Excellent sustainability', color: '#2e6620' };
+      if (score >= 51) return { label: 'Good sustainability', color: '#3d7a28' };
+      if (score >= 34) return { label: 'Average sustainability', color: '#7a5800' };
+      if (score >= 17) return { label: 'Poor sustainability', color: '#a04010' };
+      return { label: 'Very poor sustainability', color: '#8a2010' };
     }
 
     function eqaColor(score) {
       if (score == null) return '#7a9a6a';
-      if (score <= 15) return '#5a9c3e';
-      if (score <= 30) return '#c4a020';
-      if (score <= 45) return '#d05820';
+      if (score >= 68) return '#2e6620';
+      if (score >= 51) return '#5a9c3e';
+      if (score >= 34) return '#c4a020';
+      if (score >= 17) return '#d05820';
       return '#b84b20';
     }
 
@@ -1677,16 +1686,19 @@
       html += efField('Assessor', efSelect('edit-assessor', team, row.assessor, 'Unassigned'));
       html += locationLabelField(row.location_label, row.location === 'Other');
       html += efField('Assessment date', `<input class="ef-input" type="date" id="edit-assess_date" value="${escapeHtml(row.assess_date || '')}">`);
-      html += '<div class="ef-section">Environmental penalties · lower is better</div>';
-      EQA_FEATURE_KEYS.forEach(key => {
-        const opts = EQA_OPTIONS[key].map(([v, label]) => [v, `${v} pts — ${label}`]);
-        html += efField(eqaFeatureLabels[key], efSelect(`edit-${key}`, opts, row[key]));
+      EQA_CATEGORIES.forEach(cat => {
+        html += `<div class="ef-section">${escapeHtml(cat.label)} · 0 = excellent, 4 = clear issue</div>`;
+        cat.features.forEach(([key, label]) => {
+          html += efField(label, efSelect(`edit-${key}`, EQA_PENALTY_OPTIONS, row[key]));
+        });
       });
-      html += `<div class="ef-total-line">Total penalty score: <span class="ef-total" id="edit-eqa-total">${row.total_score ?? 0}</span> / 60</div>`;
+      html += `<div class="ef-total-line">Final score: <span class="ef-total" id="edit-eqa-total">${row.total_score != null ? (EQA_MAX_SCORE - row.total_score) : EQA_MAX_SCORE}</span> / 84</div>`;
+      html += '<div class="ef-section">Notes & strongest feature</div>';
+      html += efField('Strongest sustainability feature', `<input class="ef-input" id="edit-strongest_feature" maxlength="120" value="${escapeHtml(row.strongest_feature || '')}">`, true);
+      html += efField('Notes', `<textarea class="ef-input" id="edit-notes">${escapeHtml(row.notes || '')}</textarea>`, true);
       html += '<div class="ef-section">Map location (optional)</div>';
       html += efField('Latitude', `<input class="ef-input" type="number" step="any" id="edit-latitude" value="${row.latitude ?? ''}">`);
       html += efField('Longitude', `<input class="ef-input" type="number" step="any" id="edit-longitude" value="${row.longitude ?? ''}">`);
-      html += efField('Notes', `<textarea class="ef-input" id="edit-notes">${escapeHtml(row.notes || '')}</textarea>`, true);
       html += '</div>';
       return html;
     }
@@ -1721,15 +1733,15 @@
       state.editId = null;
     }
 
-    // Keep the EQA total in sync with the selected penalties as they change.
+    // Keep the EQA final score (84 − deductions) in sync as penalties change.
     function attachEqaTotal() {
       const recompute = () => {
-        const total = EQA_FEATURE_KEYS.reduce((sum, key) => {
+        const deductions = EQA_FEATURE_KEYS.reduce((sum, key) => {
           const el = document.getElementById(`edit-${key}`);
           return sum + (el ? (parseInt(el.value, 10) || 0) : 0);
         }, 0);
         const out = document.getElementById('edit-eqa-total');
-        if (out) out.textContent = total;
+        if (out) out.textContent = EQA_MAX_SCORE - deductions;
       };
       EQA_FEATURE_KEYS.forEach(key => {
         const el = document.getElementById(`edit-${key}`);
@@ -1771,6 +1783,7 @@
         location_label: location === 'Other' ? fieldValue('edit-location_label').trim() : '',
         assess_date: fieldValue('edit-assess_date'),
         assessor: fieldValue('edit-assessor'),
+        strongest_feature: fieldValue('edit-strongest_feature').trim(),
         notes: fieldValue('edit-notes').trim(),
         latitude: fieldValue('edit-latitude'),
         longitude: fieldValue('edit-longitude')
@@ -1832,10 +1845,16 @@
       state.eqaRows.forEach(row => {
         const coords = resolveCoords(row);
         if (!coords) return;
-        const score = row.total_score;
-        L.circleMarker(coords, { radius: 9, color: '#fff', weight: 2, fillColor: eqaColor(score), fillOpacity: 0.95 })
-          .bindPopup(`<strong>EQA: ${escapeHtml(row.location || '')}</strong>${row.location_label ? '<br>' + escapeHtml(row.location_label) : ''}<br>Penalty score: ${score ?? '—'}/60<br>${escapeHtml(row.assessor || '')}`)
-          .addTo(state.mapLayer);
+        if (isEqaV2(row)) {
+          const final = eqaFinalScore(row);
+          L.circleMarker(coords, { radius: 9, color: '#fff', weight: 2, fillColor: eqaColor(final), fillOpacity: 0.95 })
+            .bindPopup(`<strong>EQA: ${escapeHtml(row.location || '')}</strong>${row.location_label ? '<br>' + escapeHtml(row.location_label) : ''}<br>Score: ${final}/84 · ${eqaBand(final).label}<br>${escapeHtml(row.assessor || '')}`)
+            .addTo(state.mapLayer);
+        } else {
+          L.circleMarker(coords, { radius: 8, color: '#fff', weight: 2, fillColor: '#9aa0a6', fillOpacity: 0.85 })
+            .bindPopup(`<strong>EQA: ${escapeHtml(row.location || '')}</strong> (legacy)<br>Old penalty: ${row.total_score ?? '—'}/60<br>${escapeHtml(row.assessor || '')}`)
+            .addTo(state.mapLayer);
+        }
         bounds.push(coords);
       });
 

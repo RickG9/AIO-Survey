@@ -310,10 +310,9 @@
       flex-shrink: 0;
     }
 
-    .penalty-0  { background: var(--green-pale);  color: var(--green-mid); }
-    .penalty-4  { background: var(--amber-pale);  color: var(--amber); }
-    .penalty-8  { background: var(--orange-pale); color: var(--orange); }
-    .penalty-10 { background: var(--red-pale);    color: var(--terra); }
+    .penalty-0 { background: var(--green-pale); color: var(--green-mid); }
+    .penalty-2 { background: var(--amber-pale); color: var(--amber); }
+    .penalty-4 { background: var(--red-pale);   color: var(--terra); }
 
     /* ─── NOTES ───────────────────────────────────────── */
     .notes-card {
@@ -639,7 +638,7 @@
   <div class="header-badge">Sacred Heart College · Auckland</div>
   <h1>Environmental Quality Assessment</h1>
   <p class="header-abbr">EQA Field Tool</p>
-  <p>Select one option per feature. Penalty points total is automatically calculated. Maximum score = 60.</p>
+  <p>Start at 84 points. For each feature, tick one penalty: 0 = no issue / excellent, 2 = minor issue, 4 = clear issue. Your final score updates automatically.</p>
 </header>
 <svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
   <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
@@ -647,11 +646,11 @@
 
 <!-- ─── STICKY SCORE BAR ──────────────────────────── -->
 <div class="score-bar" id="score-bar">
-  <span class="score-label">Penalty score</span>
+  <span class="score-label">Sustainability score</span>
   <div class="score-track">
     <div class="score-fill" id="bar-fill"></div>
   </div>
-  <div class="score-value" id="bar-value">0 / 60</div>
+  <div class="score-value" id="bar-value">84 / 84</div>
 </div>
 
 <!-- ─── FORM VIEW ──────────────────────────────────── -->
@@ -696,174 +695,14 @@
         </div>
       </div>
 
-      <!-- ── 1. LANDSCAPE QUALITY ────────────────────── -->
-      <div class="section-title">Landscape Quality <span class="max-badge">max 8 pts</span></div>
-      <div class="feature-card" id="card-lq" data-feature="lq" data-max="8">
-        <div class="feature-header">
-          <p class="feature-name">Rate the landscape quality at this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="lq" value="0">
-            <span class="option-text">Trees and well kept grassy area</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="lq" value="4">
-            <span class="option-text">Few trees and unkempt grassy area</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="lq" value="8">
-            <span class="option-text">No trees and no grassy areas</span>
-            <span class="penalty penalty-8">8 pts</span>
-          </label>
-        </div>
-      </div>
+      <!-- Feature cards are built from EQA_CATEGORIES in the script below -->
+      <div id="features-root"></div>
 
-      <!-- ── 2. NOISE ────────────────────────────────── -->
-      <div class="section-title">Noise <span class="max-badge">max 8 pts</span></div>
-      <div class="feature-card" id="card-noise" data-feature="noise" data-max="8">
-        <div class="feature-header">
-          <p class="feature-name">Rate the noise level at this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="noise" value="0">
-            <span class="option-text">Quiet and secluded</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="noise" value="4">
-            <span class="option-text">Above normal residential standard</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="noise" value="8">
-            <span class="option-text">Main street / Very noisy</span>
-            <span class="penalty penalty-8">8 pts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 3. AIR POLLUTION ───────────────────────── -->
-      <div class="section-title">Air Pollution <span class="max-badge">max 10 pts</span></div>
-      <div class="feature-card" id="card-air" data-feature="air" data-max="10">
-        <div class="feature-header">
-          <p class="feature-name">Rate the air quality at this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="air" value="0">
-            <span class="option-text">No obvious smell or pollution</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="air" value="10">
-            <span class="option-text">Obvious smell and pollution</span>
-            <span class="penalty penalty-10">10 pts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 4. LITTER ───────────────────────────────── -->
-      <div class="section-title">Litter <span class="max-badge">max 8 pts</span></div>
-      <div class="feature-card" id="card-litter" data-feature="litter" data-max="8">
-        <div class="feature-header">
-          <p class="feature-name">Rate the amount of litter at this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="litter" value="0">
-            <span class="option-text">No litter</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="litter" value="4">
-            <span class="option-text">Some litter</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="litter" value="8">
-            <span class="option-text">Very untidy</span>
-            <span class="penalty penalty-8">8 pts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 5. VANDALISM ────────────────────────────── -->
-      <div class="section-title">Vandalism <span class="max-badge">max 8 pts</span></div>
-      <div class="feature-card" id="card-vandalism" data-feature="vandalism" data-max="8">
-        <div class="feature-header">
-          <p class="feature-name">Rate the level of vandalism at this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="vandalism" value="0">
-            <span class="option-text">No vandalism</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="vandalism" value="4">
-            <span class="option-text">Some vandalism</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="vandalism" value="8">
-            <span class="option-text">Much vandalism</span>
-            <span class="penalty penalty-8">8 pts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 6. ACCESS TO PUBLIC TRANSPORT ─────────── -->
-      <div class="section-title">Access to Public Transport <span class="max-badge">max 8 pts</span></div>
-      <div class="feature-card" id="card-transport" data-feature="transport" data-max="8">
-        <div class="feature-header">
-          <p class="feature-name">Rate public transport access to this location <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="transport" value="0">
-            <span class="option-text">Not very close to buses (more than 5 minutes walk)</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="transport" value="4">
-            <span class="option-text">Close to bus route</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="transport" value="8">
-            <span class="option-text">Very close to bus route (bus stop outside)</span>
-            <span class="penalty penalty-8">8 pts</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 7. DERELICT LAND ───────────────────────── -->
-      <div class="section-title">Derelict Land <span class="max-badge">max 10 pts</span></div>
-      <div class="feature-card" id="card-derelict" data-feature="derelict" data-max="10">
-        <div class="feature-header">
-          <p class="feature-name">Rate the amount of derelict or neglected land <span class="req">*</span></p>
-        </div>
-        <div class="options-list">
-          <label class="option-item">
-            <input type="radio" name="derelict" value="0">
-            <span class="option-text">None</span>
-            <span class="penalty penalty-0">0 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="derelict" value="4">
-            <span class="option-text">Small area</span>
-            <span class="penalty penalty-4">4 pts</span>
-          </label>
-          <label class="option-item">
-            <input type="radio" name="derelict" value="10">
-            <span class="option-text">Large area — major eyesore</span>
-            <span class="penalty penalty-10">10 pts</span>
-          </label>
-        </div>
+      <!-- Strongest sustainability feature -->
+      <div class="notes-card" style="margin-top:0.75rem">
+        <p class="notes-label">Strongest sustainability feature (optional)</p>
+        <input class="field-input" type="text" id="strongest-feature" name="strongest_feature" maxlength="120"
+               placeholder="e.g. cultural respect, recycling, native planting">
       </div>
 
       <!-- Notes -->
@@ -887,7 +726,7 @@
 <div id="result-screen" class="result-screen">
   <div class="result-score-ring" id="result-ring">
     <span class="big-num" id="result-num">—</span>
-    <span class="of-60">out of 60</span>
+    <span class="of-60">out of 84</span>
   </div>
   <h2 class="result-title" id="result-location">EQA Complete</h2>
   <span class="result-rating" id="result-rating"></span>
@@ -907,16 +746,63 @@
 </footer>
 
 <script>
-  const features = ['lq','noise','air','litter','vandalism','transport','derelict'];
-  const featureLabels = {
-    lq:         'Landscape Quality',
-    noise:      'Noise',
-    air:        'Air Pollution',
-    litter:     'Litter',
-    vandalism:  'Vandalism',
-    transport:  'Access to Public Transport',
-    derelict:   'Derelict Land'
-  };
+  // EQA v2 model — 7 categories x 3 features, each 0/2/4 penalty. Final = 84 - deductions (higher is better).
+  const EQA_CATEGORIES = [
+    { key: 'waste', label: 'Waste & recycling', features: [
+      ['waste_litter',    'Little or no litter is visible'],
+      ['waste_bins_find', 'Recycling and rubbish bins are easy to find'],
+      ['waste_bins_use',  'Bins are clearly labelled and correctly used'] ] },
+    { key: 'nature', label: 'Natural landscape & biodiversity', features: [
+      ['nature_healthy', 'Trees, plants and green spaces appear healthy'],
+      ['nature_native',  'Native vegetation is protected or restored'],
+      ['nature_tracks',  'Tracks and visitor areas avoid damaging nature'] ] },
+    { key: 'pollution', label: 'Pollution & resource management', features: [
+      ['poll_clean',     'Little visible air, water or land pollution'],
+      ['poll_noise',     'Noise levels do not disturb the environment'],
+      ['poll_resources', 'Visible evidence of saving water or energy'] ] },
+    { key: 'crowding', label: 'Visitor pressure & crowding', features: [
+      ['crowd_space',    'The attraction does not feel overcrowded'],
+      ['crowd_managed',  'Visitor numbers appear well managed'],
+      ['crowd_barriers', 'Barriers / signs protect sensitive areas'] ] },
+    { key: 'access', label: 'Accessibility & visitor facilities', features: [
+      ['access_disability', 'Accessible for people with disabilities'],
+      ['access_facilities', 'Toilets, seating and rest areas are available and clean'],
+      ['access_transport',  'Public transport, shuttle or low-impact transport is available'] ] },
+    { key: 'culture', label: 'Cultural sustainability', features: [
+      ['culture_reo',     'Te reo Māori is used correctly in signs or presentations'],
+      ['culture_respect', 'Māori culture and history are represented respectfully'],
+      ['culture_iwi',     'Local iwi / community connections are explained'] ] },
+    { key: 'education', label: 'Sustainability education & management', features: [
+      ['edu_info',       'Visitors are given sustainability information'],
+      ['edu_encourage',  'Visitors are encouraged to behave sustainably'],
+      ['edu_programmes', 'Evidence of active sustainability programmes'] ] }
+  ];
+  const FEATURES = EQA_CATEGORIES.flatMap(c => c.features.map(f => f[0]));
+  const PENALTY_OPTIONS = [[0, 'No issue / excellent'], [2, 'Minor issue'], [4, 'Clear issue']];
+  const MAX_SCORE = 84;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ── Build the 21 feature cards from the model ──────
+  document.getElementById('features-root').innerHTML = EQA_CATEGORIES.map((cat, i) => {
+    const cards = cat.features.map(([key, label]) => `
+      <div class="feature-card" id="card-${key}" data-feature="${key}">
+        <div class="feature-header"><p class="feature-name">${label} <span class="req">*</span></p></div>
+        <div class="options-list">
+          ${PENALTY_OPTIONS.map(([v, txt]) => `
+          <label class="option-item">
+            <input type="radio" name="${key}" value="${v}">
+            <span class="option-text">${txt}</span>
+            <span class="penalty penalty-${v}">${v} pts</span>
+          </label>`).join('')}
+        </div>
+      </div>`).join('');
+    return `<div class="section-title">${i + 1}. ${cat.label} <span class="max-badge">max 12</span></div>${cards}`;
+  }).join('');
 
   // Set today's date
   const today = new Date().toISOString().split('T')[0];
@@ -939,29 +825,36 @@
     });
   });
 
-  // ── Live score ────────────────────────────────────
-  function getScore() {
+  // ── Live score (final = 84 − deductions) ──────────
+  function getDeductions() {
     let total = 0;
-    features.forEach(f => {
+    FEATURES.forEach(f => {
       const checked = document.querySelector(`input[name="${f}"]:checked`);
       if (checked) total += parseInt(checked.value, 10);
     });
     return total;
   }
 
+  function band(score) {
+    if (score >= 68) return { text: 'Excellent', color: '#2e6620', border: '#5a9c3e', bg: '#d6edd0', fill: '#2e6620' };
+    if (score >= 51) return { text: 'Good',      color: '#3d7a28', border: '#78b35b', bg: '#e3f0d8', fill: '#5a9c3e' };
+    if (score >= 34) return { text: 'Average',   color: '#7a5800', border: '#c4a020', bg: '#fdf0d0', fill: '#c4a020' };
+    if (score >= 17) return { text: 'Poor',      color: '#a04010', border: '#d05820', bg: '#fde0cc', fill: '#d05820' };
+    return             { text: 'Very poor',      color: '#8a2010', border: '#b84b20', bg: '#fdd8d0', fill: '#b84b20' };
+  }
+
   function updateScore() {
-    const score = getScore();
-    const pct = (score / 60) * 100;
+    const score = MAX_SCORE - getDeductions();
+    document.getElementById('bar-value').textContent = `${score} / 84`;
+    document.getElementById('bar-fill').style.width = (score / MAX_SCORE) * 100 + '%';
+    document.getElementById('bar-fill').style.background = band(score).fill;
+  }
 
-    document.getElementById('bar-value').textContent = `${score} / 60`;
-    document.getElementById('bar-fill').style.width = pct + '%';
-
-    // Color the bar by range
-    const fill = document.getElementById('bar-fill');
-    if      (score <= 15) fill.style.background = '#5a9c3e';
-    else if (score <= 30) fill.style.background = '#c4a020';
-    else if (score <= 45) fill.style.background = '#d05820';
-    else                  fill.style.background = '#b84b20';
+  function categoryDeduction(cat) {
+    return cat.features.reduce((sum, [key]) => {
+      const checked = document.querySelector(`input[name="${key}"]:checked`);
+      return sum + (checked ? parseInt(checked.value, 10) : 0);
+    }, 0);
   }
 
   // ── Validation + submit ───────────────────────────
@@ -982,7 +875,7 @@
     }
 
     // Check all features
-    features.forEach(f => {
+    FEATURES.forEach(f => {
       const card = document.getElementById(`card-${f}`);
       if (!document.querySelector(`input[name="${f}"]:checked`)) {
         card.classList.add('error');
@@ -992,7 +885,7 @@
     });
 
     if (!valid) {
-      note.textContent = '⚠️ Please fill in all required fields before submitting.';
+      note.textContent = '⚠️ Please score every feature before submitting.';
       firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -1004,15 +897,12 @@
       longitude: document.getElementById('longitude').value,
       assess_date: document.getElementById('assess-date').value,
       assessor: document.getElementById('assessor-name').value.trim(),
-      notes: document.getElementById('notes-input').value.trim(),
-      lq: parseInt(document.querySelector('input[name="lq"]:checked').value, 10),
-      noise: parseInt(document.querySelector('input[name="noise"]:checked').value, 10),
-      air: parseInt(document.querySelector('input[name="air"]:checked').value, 10),
-      litter: parseInt(document.querySelector('input[name="litter"]:checked').value, 10),
-      vandalism: parseInt(document.querySelector('input[name="vandalism"]:checked').value, 10),
-      transport: parseInt(document.querySelector('input[name="transport"]:checked').value, 10),
-      derelict: parseInt(document.querySelector('input[name="derelict"]:checked').value, 10)
+      strongest_feature: document.getElementById('strongest-feature').value.trim(),
+      notes: document.getElementById('notes-input').value.trim()
     };
+    FEATURES.forEach(f => {
+      payload[f] = parseInt(document.querySelector(`input[name="${f}"]:checked`).value, 10);
+    });
 
     const submitBtn = document.querySelector('.submit-btn');
     submitBtn.disabled = true;
@@ -1105,61 +995,61 @@
 
   // ── Show results ──────────────────────────────────
   function showResults() {
-    const score = getScore();
+    const score = MAX_SCORE - getDeductions();
     const location = document.getElementById('location-name').value.trim();
     const date = document.getElementById('assess-date').value;
     const assessor = document.getElementById('assessor-name').value.trim();
+    const strongest = document.getElementById('strongest-feature').value.trim();
     const notes = document.getElementById('notes-input').value.trim();
-
-    // Rating
-    let ratingText, ratingColor, ringBorder, ringBg;
-    if      (score <= 15) { ratingText='Good Environmental Quality';   ratingColor='#2e6620'; ringBorder='#5a9c3e'; ringBg='#d6edd0'; }
-    else if (score <= 30) { ratingText='Moderate Environmental Quality'; ratingColor='#7a5800'; ringBorder='#c4a020'; ringBg='#fdf0d0'; }
-    else if (score <= 45) { ratingText='Poor Environmental Quality';   ratingColor='#a04010'; ringBorder='#d05820'; ringBg='#fde0cc'; }
-    else                  { ratingText='Very Poor Environmental Quality'; ratingColor='#8a2010'; ringBorder='#b84b20'; ringBg='#fdd8d0'; }
+    const b = band(score);
 
     // Score ring
     const ring = document.getElementById('result-ring');
-    ring.style.borderColor = ringBorder;
-    ring.style.background  = ringBg;
-    ring.style.color       = ratingColor;
+    ring.style.borderColor = b.border;
+    ring.style.background  = b.bg;
+    ring.style.color       = b.color;
     document.getElementById('result-num').textContent = score;
 
     document.getElementById('result-location').textContent = location;
 
     const ratingEl = document.getElementById('result-rating');
-    ratingEl.textContent = ratingText;
-    ratingEl.style.background = ringBg;
-    ratingEl.style.color      = ratingColor;
+    ratingEl.textContent = `${b.text} sustainability`;
+    ratingEl.style.background = b.bg;
+    ratingEl.style.color      = b.color;
 
-    // Build breakdown
-    let rows = '';
-    features.forEach(f => {
-      const pts = parseInt(document.querySelector(`input[name="${f}"]:checked`).value, 10);
-      const label = document.querySelector(`input[name="${f}"]:checked`).closest('.option-item').querySelector('.option-text').textContent;
-      rows += `
+    // Breakdown by category (points deducted)
+    let rows = EQA_CATEGORIES.map(cat => `
         <div class="result-row">
-          <span class="rr-name">${featureLabels[f]}</span>
-          <span class="rr-pts">${pts} pts</span>
-        </div>`;
-    });
+          <span class="rr-name">${cat.label}</span>
+          <span class="rr-pts">−${categoryDeduction(cat)}</span>
+        </div>`).join('');
 
+    if (strongest) {
+      rows += `<div class="result-row">
+        <span class="rr-name">Strongest feature</span>
+        <span class="rr-pts" style="font-weight:600">${escapeHtml(strongest)}</span>
+      </div>`;
+    }
     if (notes) {
       rows += `<div class="result-row" style="flex-direction:column;align-items:flex-start;gap:0.3rem">
         <span class="rr-name" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-light)">Notes</span>
-        <span style="font-size:0.88rem;color:var(--text)">${notes}</span>
+        <span style="font-size:0.88rem;color:var(--text)">${escapeHtml(notes)}</span>
       </div>`;
     }
 
     document.getElementById('result-summary').innerHTML = `
       <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-light);margin-bottom:0.75rem">
         ${date ? `📅 ${date}` : ''}
-        ${assessor ? ` &nbsp;·&nbsp; 👤 ${assessor}` : ''}
+        ${assessor ? ` &nbsp;·&nbsp; 👤 ${escapeHtml(assessor)}` : ''}
       </div>
       ${rows}
       <div class="result-total-row">
-        <span>Total Penalty Score</span>
-        <span>${score} / 60</span>
+        <span>Total deductions</span>
+        <span>−${getDeductions()} / 84</span>
+      </div>
+      <div class="result-total-row" style="margin-top:0.4rem">
+        <span>Final score</span>
+        <span>${score} / 84</span>
       </div>`;
 
     document.getElementById('form-view').style.display = 'none';
@@ -1171,30 +1061,34 @@
 
   // ── Copy results to clipboard ─────────────────────
   function copyResults() {
-    const score    = getScore();
+    const score    = MAX_SCORE - getDeductions();
     const location = document.getElementById('location-name').value.trim();
     const date     = document.getElementById('assess-date').value;
     const assessor = document.getElementById('assessor-name').value.trim();
+    const strongest = document.getElementById('strongest-feature').value.trim();
     const notes    = document.getElementById('notes-input').value.trim();
+    const line = '─'.repeat(40);
 
     let text = `ENVIRONMENTAL QUALITY ASSESSMENT (EQA)\n`;
     text += `Sacred Heart College Auckland\n`;
-    text += `${'─'.repeat(40)}\n`;
+    text += `${line}\n`;
     text += `Location:  ${location}\n`;
     if (date)     text += `Date:      ${date}\n`;
     if (assessor) text += `Assessor:  ${assessor}\n`;
-    text += `${'─'.repeat(40)}\n`;
+    text += `${line}\n`;
 
-    features.forEach(f => {
-      const pts   = parseInt(document.querySelector(`input[name="${f}"]:checked`).value, 10);
-      const label = document.querySelector(`input[name="${f}"]:checked`).closest('.option-item').querySelector('.option-text').textContent;
-      text += `${featureLabels[f].padEnd(26)} ${pts} pts\n`;
-      text += `  → ${label}\n`;
+    EQA_CATEGORIES.forEach(cat => {
+      text += `${cat.label}  (−${categoryDeduction(cat)})\n`;
+      cat.features.forEach(([key, label]) => {
+        const checked = document.querySelector(`input[name="${key}"]:checked`);
+        text += `  • ${label}: ${checked ? checked.value : '-'}\n`;
+      });
     });
 
-    text += `${'─'.repeat(40)}\n`;
-    text += `TOTAL SCORE: ${score} / 60\n`;
-
+    text += `${line}\n`;
+    text += `Total deductions: ${getDeductions()} / 84\n`;
+    text += `FINAL SCORE: ${score} / 84  (${band(score).text})\n`;
+    if (strongest) text += `Strongest feature: ${strongest}\n`;
     if (notes) text += `\nNotes: ${notes}\n`;
 
     navigator.clipboard.writeText(text).then(() => {
