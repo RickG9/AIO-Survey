@@ -97,6 +97,20 @@
     .rec-status { font-size:0.82rem; color:var(--text-light); margin-top:0.6rem; min-height:1.1em; }
     audio { width:100%; margin-top:0.8rem; }
 
+    /* Upload an existing recording (e.g. iPhone Voice Memos) */
+    .rec-or { display:flex; align-items:center; gap:0.8rem; margin:1.1rem 0 0.9rem; color:var(--text-light); font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.09em; }
+    .rec-or::before, .rec-or::after { content:''; flex:1; height:1px; background:var(--cream-dark); }
+    .upload-btn {
+      display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; width:100%; justify-content:center;
+      border:2px dashed var(--green-light); color:var(--green-mid); background:var(--green-pale);
+      border-radius:var(--radius-sm); padding:0.8rem 1.2rem; font-weight:600; font-size:0.93rem;
+      transition:background 0.18s ease, border-color 0.18s ease;
+    }
+    .upload-btn:hover { background:#cae6c2; border-color:var(--green-mid); }
+    .upload-name { display:block; font-size:0.85rem; color:var(--green-mid); font-weight:600; margin-top:0.55rem; word-break:break-all; }
+    .upload-hint { font-size:0.8rem; color:var(--text-light); margin-top:0.55rem; line-height:1.45; }
+    .upload-hint code { background:var(--cream-dark); border-radius:5px; padding:0.05rem 0.35rem; font-size:0.92em; }
+
     .submit-area { margin-top:1.6rem; text-align:center; }
     .submit-btn {
       background:linear-gradient(135deg,var(--green-mid),var(--green)); color:var(--white); border:none;
@@ -130,7 +144,7 @@
 <header class="header">
   <div class="header-badge">Sacred Heart College · Auckland · Staff</div>
   <h1>Field Interview Recorder</h1>
-  <p>Record short interviews with the public, pin the location, and transcribe them later from the dashboard.</p>
+  <p>Record short interviews with the public — or upload a voice memo from your phone — pin the location, and transcribe them later from the dashboard.</p>
 </header>
 <svg class="wave" viewBox="0 0 1440 40" preserveAspectRatio="none" height="40" xmlns="http://www.w3.org/2000/svg">
   <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z"/>
@@ -206,6 +220,13 @@
       <span class="rec-timer" id="rec-timer">00:00</span>
     </div>
     <p class="rec-status" id="rec-status"></p>
+
+    <div class="rec-or">or upload a recording</div>
+    <label class="upload-btn" for="audio-upload">📁 Choose a voice recording</label>
+    <input type="file" id="audio-upload" accept="audio/*,.m4a,.mp4,.mp3,.wav,.aac,.caf,.aiff,.amr" style="display:none;">
+    <span class="upload-name" id="upload-name"></span>
+    <p class="upload-hint">📱 Recorded it on your iPhone's <strong>Voice Memos</strong> app? Save it to Files, then upload the <code>.m4a</code> here — ideal for remote spots like the zipline with no signal. It transcribes from the dashboard just like a live recording.</p>
+
     <audio id="audio-preview" controls style="display:none;"></audio>
 
     <div id="live-wrap" style="margin-top:1rem; display:none;">
@@ -413,6 +434,9 @@
   const recTimer = document.getElementById('rec-timer');
   const recStatus = document.getElementById('rec-status');
   const audioPreview = document.getElementById('audio-preview');
+  const audioUpload = document.getElementById('audio-upload');
+  const uploadName = document.getElementById('upload-name');
+  const MAX_UPLOAD_MB = 100; // keep in sync with the server's multer limit
 
   function fmt(s) { const m = Math.floor(s/60), ss = s%60; return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; }
 
@@ -446,6 +470,7 @@
       return;
     }
     chunks = []; audioBlob = null;
+    audioUpload.value = ''; uploadName.textContent = ''; // a fresh recording replaces any chosen file
     audioPreview.style.display = 'none';
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
@@ -482,6 +507,30 @@
     else startRecording();
   });
 
+  // ── Upload an existing recording (e.g. iPhone Voice Memos .m4a) ──
+  audioUpload.addEventListener('change', () => {
+    const file = audioUpload.files && audioUpload.files[0];
+    if (!file) return;
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      recStatus.textContent = `⚠️ That file is ${(file.size / 1024 / 1024).toFixed(0)} MB — the max is ${MAX_UPLOAD_MB} MB. Trim it, or record in Voice Memos' default compressed quality.`;
+      audioUpload.value = '';
+      return;
+    }
+    // An uploaded file takes over from any live recording.
+    if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+    audioBlob = file; // submit() uploads whatever's in audioBlob
+    // Uploaded files have no live transcript — they're transcribed later on the dashboard.
+    document.getElementById('live-wrap').style.display = 'none';
+    document.getElementById('live-transcript').value = '';
+    audioPreview.src = URL.createObjectURL(file);
+    audioPreview.style.display = 'block';
+    uploadName.textContent = `📎 ${file.name}  (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+    recBtn.textContent = '● Start recording';
+    recBtn.classList.remove('recording');
+    recTimer.textContent = '00:00';
+    recStatus.textContent = '✅ File ready. Save below, then transcribe it from the dashboard.';
+  });
+
   // ── Submit ───────────────────────────────────────────
   document.getElementById('submit-btn').addEventListener('click', async () => {
     const note = document.getElementById('note');
@@ -500,8 +549,10 @@
     fd.append('notes', document.getElementById('notes').value.trim());
     fd.append('transcript', document.getElementById('live-transcript').value.trim());
     if (audioBlob) {
-      const ext = (audioBlob.type.includes('mp4')) ? 'mp4' : (audioBlob.type.includes('ogg')) ? 'ogg' : 'webm';
-      fd.append('audio', audioBlob, `interview.${ext}`);
+      // Uploaded files carry their real name (keep the .m4a etc.); live blobs get a synthesized one.
+      const type = audioBlob.type || '';
+      const ext = type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
+      fd.append('audio', audioBlob, audioBlob.name || `interview.${ext}`);
     }
 
     const btn = document.getElementById('submit-btn');
@@ -531,6 +582,7 @@
     document.getElementById('live-transcript').value = '';
     document.getElementById('live-wrap').style.display = 'none';
     audioPreview.style.display = 'none'; audioPreview.src = '';
+    audioUpload.value = ''; uploadName.textContent = '';
     audioBlob = null; chunks = []; marker = null; lat = ''; lng = '';
     if (map) { map.remove(); map = null; }
     recTimer.textContent = '00:00'; recStatus.textContent = '';

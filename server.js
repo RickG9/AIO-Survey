@@ -14,21 +14,51 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 // Free-tier friendly default; override with SUMMARY_MODEL if your key has quota elsewhere.
 const SUMMARY_MODEL = process.env.SUMMARY_MODEL || 'gemini-2.5-flash';
 
+// Audio containers we accept on upload. In-browser recordings arrive as
+// webm/mp4/ogg; phone uploads (e.g. iPhone Voice Memos) are typically .m4a.
+const AUDIO_EXT_RE = /\.(m4a|mp4|mov|webm|ogg|oga|mp3|wav|aac|caf|flac|aif|aiff|amr|3gp|3gpp)$/i;
+
+// Choose the on-disk extension: prefer the uploaded file's real extension so an
+// iPhone .m4a stays .m4a, then fall back to the MIME type, then a generic name.
+// Deepgram sniffs the container from the bytes, so this is mainly for clean
+// playback in the dashboard.
+function pickAudioExt(file) {
+  const match = (file.originalname || '').toLowerCase().match(AUDIO_EXT_RE);
+  if (match) return match[1] === 'oga' ? 'ogg' : match[1].toLowerCase();
+  const type = file.mimetype || '';
+  if (type.includes('mp4') || type.includes('m4a') || type.includes('aac')) return 'm4a';
+  if (type.includes('webm')) return 'webm';
+  if (type.includes('ogg')) return 'ogg';
+  if (type.includes('mpeg') || type.includes('mp3')) return 'mp3';
+  if (type.includes('wav')) return 'wav';
+  return 'audio';
+}
+
 // Store interview audio straight to disk (inside the persistent data volume) so
 // large recordings never get buffered in memory on the small server.
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, audioDir),
     filename: (req, file, cb) => {
-      const ext = (file.mimetype && file.mimetype.includes('mp4')) ? 'mp4'
-        : (file.mimetype && file.mimetype.includes('webm')) ? 'webm'
-        : (file.mimetype && file.mimetype.includes('ogg')) ? 'ogg'
-        : 'audio';
-      cb(null, `interview_${Date.now()}_${Math.round(Math.random() * 1e6)}.${ext}`);
+      cb(null, `interview_${Date.now()}_${Math.round(Math.random() * 1e6)}.${pickAudioExt(file)}`);
     }
   }),
-  limits: { fileSize: 60 * 1024 * 1024 } // 60 MB per recording is plenty for a field interview
+  // 100 MB leaves room for longer recordings uploaded from remote sites with no
+  // signal (e.g. a phone voice memo taken at the zipline).
+  limits: { fileSize: 100 * 1024 * 1024 }
 });
+
+// Wrap the multer middleware so an oversized or unreadable upload comes back as
+// clean JSON instead of express's default HTML 500 (which the client can't parse).
+function uploadAudio(req, res, next) {
+  upload.single('audio')(req, res, (err) => {
+    if (!err) return next();
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Recording is too large (max 100 MB). Use Voice Memos’ default compressed quality, or trim it first.'
+      : 'Could not read the uploaded recording.';
+    return sendError(res, 400, message);
+  });
+}
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) {
@@ -511,7 +541,7 @@ app.delete('/api/admin/eqa', (req, res) => {
 });
 
 // ─── Interviews (admin only) ─────────────────────────────────────────────
-app.post('/api/admin/interviews', upload.single('audio'), (req, res) => {
+app.post('/api/admin/interviews', uploadAudio, (req, res) => {
   try {
     const location = typeof req.body.location === 'string' ? req.body.location.trim() : '';
     if (!location) {

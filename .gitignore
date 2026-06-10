@@ -6,3 +6,7 @@ data/
 
 # Local environment / secrets
 .env
+
+# Obsidian per-user UI state (shared vault settings in notes/.obsidian stay in git)
+notes/.obsidian/workspace.json
+notes/.obsidian/workspace-mobile.json
