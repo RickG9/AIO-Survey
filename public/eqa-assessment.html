@@ -679,11 +679,7 @@
           <input type="hidden" id="latitude" name="latitude">
           <input type="hidden" id="longitude" name="longitude">
         </div>
-        <div>
-          <div class="field-label">Date</div>
-          <input class="field-input" type="date" id="assess-date" name="date">
-        </div>
-        <div>
+        <div class="full-width">
           <div class="field-label">Assessor</div>
           <select class="field-input" id="assessor-name" name="assessor">
             <option value="" selected disabled>Select…</option>
@@ -804,10 +800,6 @@
     return `<div class="section-title">${i + 1}. ${cat.label} <span class="max-badge">max 12</span></div>${cards}`;
   }).join('');
 
-  // Set today's date
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('assess-date').value = today;
-
   // ── Option card highlight ─────────────────────────
   document.querySelectorAll('.option-item input[type="radio"]').forEach(radio => {
     radio.addEventListener('change', function () {
@@ -895,7 +887,6 @@
       location_label: locInput.value === 'Other' ? document.getElementById('location-label').value.trim() : '',
       latitude: document.getElementById('latitude').value,
       longitude: document.getElementById('longitude').value,
-      assess_date: document.getElementById('assess-date').value,
       assessor: document.getElementById('assessor-name').value.trim(),
       strongest_feature: document.getElementById('strongest-feature').value.trim(),
       notes: document.getElementById('notes-input').value.trim()
@@ -997,7 +988,6 @@
   function showResults() {
     const score = MAX_SCORE - getDeductions();
     const location = document.getElementById('location-name').value.trim();
-    const date = document.getElementById('assess-date').value;
     const assessor = document.getElementById('assessor-name').value.trim();
     const strongest = document.getElementById('strongest-feature').value.trim();
     const notes = document.getElementById('notes-input').value.trim();
@@ -1039,8 +1029,7 @@
 
     document.getElementById('result-summary').innerHTML = `
       <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-light);margin-bottom:0.75rem">
-        ${date ? `📅 ${date}` : ''}
-        ${assessor ? ` &nbsp;·&nbsp; 👤 ${escapeHtml(assessor)}` : ''}
+        ${assessor ? `👤 ${escapeHtml(assessor)}` : ''}
       </div>
       ${rows}
       <div class="result-total-row">
@@ -1063,7 +1052,6 @@
   function copyResults() {
     const score    = MAX_SCORE - getDeductions();
     const location = document.getElementById('location-name').value.trim();
-    const date     = document.getElementById('assess-date').value;
     const assessor = document.getElementById('assessor-name').value.trim();
     const strongest = document.getElementById('strongest-feature').value.trim();
     const notes    = document.getElementById('notes-input').value.trim();
@@ -1073,7 +1061,6 @@
     text += `Sacred Heart College Auckland\n`;
     text += `${line}\n`;
     text += `Location:  ${location}\n`;
-    if (date)     text += `Date:      ${date}\n`;
     if (assessor) text += `Assessor:  ${assessor}\n`;
     text += `${line}\n`;
 
@@ -1101,7 +1088,6 @@
   // ── Restart ────────────────────────────────────────
   function restartForm() {
     document.getElementById('eqa-form').reset();
-    document.getElementById('assess-date').value = today;
 
     document.querySelectorAll('.option-item').forEach(o => o.classList.remove('selected'));
     document.querySelectorAll('.feature-card').forEach(c => c.classList.remove('answered','error'));

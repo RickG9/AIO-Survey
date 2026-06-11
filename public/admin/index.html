@@ -619,7 +619,6 @@
           <table>
             <thead>
               <tr>
-                <th>Date</th>
                 <th>Name</th>
                 <th>Interviewer</th>
                 <th>Attraction</th>
@@ -707,7 +706,6 @@
           <table>
             <thead>
               <tr>
-                <th>Date</th>
                 <th>Location</th>
                 <th>Assessor</th>
                 <th>Waste</th>
@@ -1188,7 +1186,7 @@
     function renderSurveyTable(rows) {
       const tbody = document.getElementById('survey-table');
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="20">No survey responses yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19">No survey responses yet.</td></tr>';
         return;
       }
 
@@ -1199,7 +1197,6 @@
       const pageRows = rows.slice(start, start + state.rowsPerPage);
 
       tbody.innerHTML = pageRows.map(row => {
-        const date = row.submitted_at ? row.submitted_at.split(' ')[0] : '';
         const envScore = average(envKeys.map(key => Number(row[key]) || 0));
         const socialScore = average(socialKeys.map(key => Number(row[key]) || 0));
         // Show the free-text label the respondent typed when "Other" was chosen.
@@ -1208,7 +1205,6 @@
           : escapeHtml(row.attraction || '');
         return `
           <tr>
-            <td>${date}</td>
             <td>${escapeHtml(row.respondent_name || '')}</td>
             <td>${escapeHtml(row.interviewer || '')}</td>
             <td>${attraction}</td>
@@ -1399,12 +1395,11 @@
     function renderEqaTable(rows) {
       const tbody = document.getElementById('eqa-table');
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="13">No EQA assessments yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12">No EQA assessments yet.</td></tr>';
         return;
       }
 
       tbody.innerHTML = rows.map(row => {
-        const date = row.assess_date || (row.submitted_at ? row.submitted_at.split(' ')[0] : '');
         // Show the free-text label the assessor typed when "Other" was chosen.
         const location = row.location === 'Other' && row.location_label
           ? `Other — ${escapeHtml(row.location_label)}`
@@ -1414,7 +1409,6 @@
         if (!isEqaV2(row)) {
           return `
             <tr style="opacity:0.65">
-              <td>${date}</td>
               <td>${location}</td>
               <td>${escapeHtml(row.assessor || '')}</td>
               <td colspan="7" style="font-style:italic;color:#7a9a6a">Legacy assessment (old model) · old penalty ${row.total_score ?? '—'}/60</td>
@@ -1429,7 +1423,6 @@
         const catCells = EQA_CATEGORIES.map(cat => `<td>${eqaCatDeduction(row, cat)}</td>`).join('');
         return `
           <tr>
-            <td>${date}</td>
             <td>${location}</td>
             <td>${escapeHtml(row.assessor || '')}</td>
             ${catCells}
@@ -1685,7 +1678,6 @@
       html += efField('Location', efSelect('edit-location', locations, row.location));
       html += efField('Assessor', efSelect('edit-assessor', team, row.assessor, 'Unassigned'));
       html += locationLabelField(row.location_label, row.location === 'Other');
-      html += efField('Assessment date', `<input class="ef-input" type="date" id="edit-assess_date" value="${escapeHtml(row.assess_date || '')}">`);
       EQA_CATEGORIES.forEach(cat => {
         html += `<div class="ef-section">${escapeHtml(cat.label)} · 0 = excellent, 4 = clear issue</div>`;
         cat.features.forEach(([key, label]) => {
@@ -1777,11 +1769,12 @@
     }
 
     function saveEqaEdit() {
+      const row = state.eqaRows.find(r => r.id === state.editId) || {};
       const location = fieldValue('edit-location');
       const payload = {
         location,
         location_label: location === 'Other' ? fieldValue('edit-location_label').trim() : '',
-        assess_date: fieldValue('edit-assess_date'),
+        assess_date: row.assess_date,   // preserve the stored date the form no longer collects
         assessor: fieldValue('edit-assessor'),
         strongest_feature: fieldValue('edit-strongest_feature').trim(),
         notes: fieldValue('edit-notes').trim(),

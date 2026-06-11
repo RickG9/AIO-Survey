@@ -321,7 +321,8 @@ app.post('/api/eqa', (req, res) => {
 
 app.get('/api/admin/survey', (req, res) => {
   try {
-    const rows = db.prepare('SELECT * FROM survey_responses ORDER BY submitted_at DESC, id DESC').all();
+    // Attraction-first so the dashboard table groups responses by attraction; newest first within each.
+    const rows = db.prepare('SELECT * FROM survey_responses ORDER BY attraction ASC, submitted_at DESC, id DESC').all();
     return res.json(rows);
   } catch (error) {
     return sendError(res, 500, 'Failed to load survey responses.');
